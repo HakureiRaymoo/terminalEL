@@ -2891,4 +2891,71 @@
     <value>系统集成和通知</value>
     <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
+  <data name="Globals_Section_TerminalEL.Text" xml:space="preserve"><value>TFEL 显示系统</value></data>
+  <data name="Globals_TerminalELTone.Header" xml:space="preserve"><value>明暗与色调</value></data>
+  <data name="Globals_TerminalELBloom.Header" xml:space="preserve"><value>辉光</value></data>
+  <data name="Globals_TFELBrightness.Header" xml:space="preserve"><value>亮度</value></data>
+  <data name="Globals_TFELContrast.Header" xml:space="preserve"><value>对比度</value></data>
+  <data name="Globals_TFELBlackLevel.Header" xml:space="preserve"><value>黑电平</value></data>
+  <data name="Globals_TFELGamma.Header" xml:space="preserve"><value>伽马</value></data>
+  <data name="Globals_TFELBloomIntensity.Header" xml:space="preserve"><value>辉光强度</value></data>
+  <data name="Globals_TFELBloomThreshold.Header" xml:space="preserve"><value>辉光阈值</value></data>
+  <data name="Globals_TFELBloomRadius.Header" xml:space="preserve"><value>辉光半径</value></data>
+  <data name="Globals_TFELBloomSoftness.Header" xml:space="preserve"><value>辉光柔和度</value></data>
+  <data name="TFELPresetCard.Header" xml:space="preserve"><value>EL 预设</value></data>
+  <data name="TFELPresetCard.Description" xml:space="preserve"><value>状态仅比较全局参数；配置文件覆盖仍可能影响实际画面。选择预设不会自动应用。保存后保留修改，重置会撤销全部未保存编辑。</value></data>
+  <data name="TFELPresetPickerLabel.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>待操作的预设</value></data>
+  <data name="TFELPresetNameLabel.PlaceholderText" xml:space="preserve"><value>预设名称（导入时可选填替代名称）</value></data>
+  <data name="TFELPresetNameLabel.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>预设名称</value></data>
+  <data name="TFELApply.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="TFELExport.Content" xml:space="preserve"><value>导出…</value></data>
+  <data name="TFELImport.Content" xml:space="preserve"><value>导入…</value></data>
+  <data name="TFELCreate.Content" xml:space="preserve"><value>从当前全局参数新建</value></data>
+  <data name="TFELUpdate.Content" xml:space="preserve"><value>用当前参数更新选中的自定义预设</value></data>
+  <data name="TFELRename.Content" xml:space="preserve"><value>重命名</value></data>
+  <data name="TFELDelete.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="TFELColor.Header" xml:space="preserve"><value>EL 色彩与散射</value></data>
+  <data name="TFELHueCard.Header" xml:space="preserve"><value>核心色相偏移（度）</value></data>
+  <data name="TFELSaturationCard.Header" xml:space="preserve"><value>核心饱和度</value></data>
+  <data name="TFELIndependentCard.Header" xml:space="preserve"><value>独立辉光颜色</value></data>
+  <data name="TFELGlowHueCard.Header" xml:space="preserve"><value>辉光色相（度）</value></data>
+  <data name="TFELGlowSaturationCard.Header" xml:space="preserve"><value>辉光饱和度</value></data>
+  <data name="TFELGlowMixCard.Header" xml:space="preserve"><value>独立辉光颜色混合比例</value></data>
+  <data name="TFELGlowMixCard.Description" xml:space="preserve"><value>0 跟随核心颜色；1 完全使用独立辉光颜色。</value></data>
+  <data name="TFELHueInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>核心色相偏移（度）</value></data>
+  <data name="TFELSaturationInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>核心饱和度</value></data>
+  <data name="TFELIndependentInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>独立辉光颜色</value></data>
+  <data name="TFELGlowHueInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光色相（度）</value></data>
+  <data name="TFELGlowSaturationInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光饱和度</value></data>
+  <data name="TFELGlowMixInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>独立辉光颜色混合比例</value></data>
+  <data name="TFELBrightnessInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>亮度</value></data>
+  <data name="TFELContrastInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>对比度</value></data>
+  <data name="TFELBlackLevelInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>黑电平</value></data>
+  <data name="TFELGammaInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>伽马</value></data>
+  <data name="TFELBloomIntensityInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光强度</value></data>
+  <data name="TFELBloomThresholdInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光阈值</value></data>
+  <data name="TFELBloomRadiusInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光半径</value></data>
+  <data name="TFELBloomSoftnessInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>辉光柔和度</value></data>
+  <data name="TFELStatusCustom" xml:space="preserve"><value>全局参数：已调整／自定义</value></data>
+  <data name="TFELStatusMatches" xml:space="preserve"><value>全局参数匹配：</value></data>
+  <data name="TFELCreated" xml:space="preserve"><value>已从全局参数新建预设。点击“保存”保留。</value></data>
+  <data name="TFELUpdated" xml:space="preserve"><value>已用全局参数更新选中的自定义预设。点击“保存”保留；“重置”撤销全部未保存编辑。</value></data>
+  <data name="TFELRenamed" xml:space="preserve"><value>预设已重命名。点击“保存”保留修改。</value></data>
+  <data name="TFELDeleted" xml:space="preserve"><value>预设已删除，当前参数保持不变。点击“保存”保留修改。</value></data>
+  <data name="TFELImported" xml:space="preserve"><value>预设已导入，尚未应用。点击“应用”预览，点击“保存”保留。</value></data>
+  <data name="TFELExported" xml:space="preserve"><value>已导出选中的预设。</value></data>
+  <data name="TFELPickerError" xml:space="preserve"><value>无法将文件对话框关联到当前窗口。</value></data>
+  <data name="TFELFileTooLarge" xml:space="preserve"><value>预设文件超过 256 KiB。</value></data>
+  <data name="TFELTextTooLarge" xml:space="preserve"><value>预设文本超过 65536 个字符。</value></data>
+  <data name="TFELFileType" xml:space="preserve"><value>EL 预设</value></data>
+  <data name="TFELNameRequired" xml:space="preserve"><value>请输入预设名称。</value></data>
+  <data name="TFELNameTooLong" xml:space="preserve"><value>预设名称不能超过 80 个字符。</value></data>
+  <data name="TFELNameExists" xml:space="preserve"><value>该预设名称已存在。</value></data>
+  <data name="TFELInvalidLibrary" xml:space="preserve"><value>预设库不是有效的 JSON。请先修复 terminalEL.userPresets。</value></data>
+  <data name="TFELSelectPreset" xml:space="preserve"><value>请选择有效的预设。</value></data>
+  <data name="TFELReadOnly" xml:space="preserve"><value>内置预设为只读。请先新建自定义副本。</value></data>
+  <data name="TFELUnsupportedVersion" xml:space="preserve"><value>不支持该预设版本或渲染器。</value></data>
+  <data name="TFELMonochromeOnly" xml:space="preserve"><value>当前渲染器仅支持单色预设。</value></data>
+  <data name="TFELInvalidRange" xml:space="preserve"><value>预设参数必须是支持范围内的有限数值。</value></data>
+  <data name="TFELProfileInheritance.Text" xml:space="preserve"><value>参数优先继承父级配置文件，最后回退到全局 EL 设置。每项重置仅清除当前层覆盖。独立辉光开关与混合比例共用一项设置，重置任一项都会恢复继承的混合比例。点击“保存”保留修改。</value></data>
 </root>

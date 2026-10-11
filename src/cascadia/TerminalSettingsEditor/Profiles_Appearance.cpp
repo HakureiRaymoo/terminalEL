@@ -9,6 +9,10 @@
 #include "PreviewConnection.h"
 
 #include "Profiles_Appearance.g.cpp"
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Media.h>
+#include <algorithm>
+#include <cmath>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
@@ -27,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        _activeTFELNumber = {};
         _weakWindowRoot = args.WindowRoot();
 
         // Settings are stored in Profiles_Appearance and Appearances.
@@ -78,8 +83,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
+        _activeTFELNumber = {};
         _ViewModelChangedRevoker.revoke();
         _AppearanceViewModelChangedRevoker.revoke();
+    }
+
+    void Profiles_Appearance::TFELNumber_GotFocus(const IInspectable&, const RoutedEventArgs& args)
+    {
+        _activeTFELNumber = {};
+        auto element = args.OriginalSource().try_as<DependencyObject>();
+        while (element)
+        {
+            if (const auto box = element.try_as<Microsoft::UI::Xaml::Controls::NumberBox>())
+            {
+                _activeTFELNumber = box;
+                return;
+            }
+            element = Media::VisualTreeHelper::GetParent(element);
+        }
+    }
+
+    void Profiles_Appearance::TFELNumber_ValueChanged(const Microsoft::UI::Xaml::Controls::NumberBox& box,
+                                                     const Microsoft::UI::Xaml::Controls::NumberBoxValueChangedEventArgs& args)
+    {
+        // Match the global editor: initialization never creates a profile override.
+        // Keep the last focused box until focus moves, allowing focus-loss validation.
+        if (!_Profile || !box.IsLoaded() || _activeTFELNumber.get() != box) return;
+        const auto key = unbox_value<hstring>(box.Tag());
+        const auto value = args.NewValue();
+#define TFEL_NUMBER(name) \
+        if (key == L## #name) \
+        { \
+            if (std::isfinite(value)) _Profile.name(static_cast<float>(std::clamp(value, box.Minimum(), box.Maximum()))); \
+            box.Value(_Profile.name()); \
+            return; \
+        }
+        TFEL_NUMBER(TFELHue)
+        TFEL_NUMBER(TFELSaturation)
+        TFEL_NUMBER(TFELGlowHue)
+        TFEL_NUMBER(TFELGlowSaturation)
+        TFEL_NUMBER(TFELGlowMix)
+#undef TFEL_NUMBER
     }
 
     void Profiles_Appearance::_onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&)

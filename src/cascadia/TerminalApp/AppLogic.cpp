@@ -5,6 +5,7 @@
 #include "AppLogic.h"
 #include "AppLogic.g.cpp"
 #include "SettingsLoadEventArgs.h"
+#include "TFELPreview.h"
 
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h>
@@ -408,6 +409,7 @@ namespace winrt::TerminalApp::implementation
                                                           _settingsLoadExceptionText,
                                                           warnings.GetView(),
                                                           _settings);
+        TFELPreview::Reloaded();
         SettingsChanged.raise(*this, *ev);
     }
 

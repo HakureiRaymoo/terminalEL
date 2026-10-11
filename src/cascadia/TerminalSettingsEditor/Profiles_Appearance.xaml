@@ -50,7 +50,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}" GotFocus="TFELNumber_GotFocus">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
@@ -79,6 +79,129 @@
                                Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
+
+            <TextBlock x:Uid="Globals_Section_TerminalEL"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <TextBlock x:Uid="TFELProfileInheritance" TextWrapping="Wrap" />
+            <local:SettingsExpander x:Name="TerminalELColor" x:Uid="TFELColor">
+                <local:SettingsExpander.Items>
+                    <local:SettingsCard x:Name="TFELHue" x:Uid="TFELHueCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <StackPanel Width="240">
+                                <Slider x:Uid="TFELHueInput" Minimum="-180" Maximum="180" StepFrequency="1" Value="{x:Bind Profile.TFELHue, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Uid="TFELHueInput" Minimum="-180" Maximum="180" SmallChange="1" Tag="TFELHue" Value="{x:Bind Profile.TFELHue, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                            </StackPanel>
+                            <local:SettingResetButton SettingName="TFELHue" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELSaturation" x:Uid="TFELSaturationCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <StackPanel Width="240">
+                                <Slider x:Uid="TFELSaturationInput" Minimum="0" Maximum="2" StepFrequency="0.01" Value="{x:Bind Profile.TFELSaturation, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Uid="TFELSaturationInput" Minimum="0" Maximum="2" SmallChange="0.01" Tag="TFELSaturation" Value="{x:Bind Profile.TFELSaturation, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                            </StackPanel>
+                            <local:SettingResetButton SettingName="TFELSaturation" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELIndependentGlow" x:Uid="TFELIndependentCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <ToggleSwitch x:Uid="TFELIndependentInput" IsOn="{x:Bind Profile.TFELIndependentGlow, Mode=TwoWay}" />
+                            <local:SettingResetButton SettingName="TFELGlowMix" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELGlowHue" x:Uid="TFELGlowHueCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <StackPanel Width="240">
+                                <Slider x:Uid="TFELGlowHueInput" Minimum="0" Maximum="360" StepFrequency="1" Value="{x:Bind Profile.TFELGlowHue, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Uid="TFELGlowHueInput" Minimum="0" Maximum="360" SmallChange="1" Tag="TFELGlowHue" Value="{x:Bind Profile.TFELGlowHue, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                            </StackPanel>
+                            <local:SettingResetButton SettingName="TFELGlowHue" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELGlowSaturation" x:Uid="TFELGlowSaturationCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <StackPanel Width="240">
+                                <Slider x:Uid="TFELGlowSaturationInput" Minimum="0" Maximum="1" StepFrequency="0.01" Value="{x:Bind Profile.TFELGlowSaturation, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Uid="TFELGlowSaturationInput" Minimum="0" Maximum="1" SmallChange="0.01" Tag="TFELGlowSaturation" Value="{x:Bind Profile.TFELGlowSaturation, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                            </StackPanel>
+                            <local:SettingResetButton SettingName="TFELGlowSaturation" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELGlowMix" x:Uid="TFELGlowMixCard">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <StackPanel Width="240">
+                                <Slider x:Uid="TFELGlowMixInput" Minimum="0" Maximum="1" StepFrequency="0.01" Value="{x:Bind Profile.TFELGlowMix, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Uid="TFELGlowMixInput" Minimum="0" Maximum="1" SmallChange="0.01" Tag="TFELGlowMix" Value="{x:Bind Profile.TFELGlowMix, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                            </StackPanel>
+                            <local:SettingResetButton SettingName="TFELGlowMix" Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                </local:SettingsExpander.Items>
+            </local:SettingsExpander>
+            <local:SettingsExpander x:Name="TerminalELTone" x:Uid="Globals_TerminalELTone" IsExpanded="True">
+                <local:SettingsExpander.Items>
+                    <local:SettingsCard x:Name="TFELBrightness" x:Uid="Globals_TFELBrightness">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="2" StepFrequency="0.05" Value="{x:Bind Profile.TFELBrightness, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBrightness" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELContrast" x:Uid="Globals_TFELContrast">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="2" StepFrequency="0.05" Value="{x:Bind Profile.TFELContrast, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELContrast" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELBlackLevel" x:Uid="Globals_TFELBlackLevel">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="0.5" StepFrequency="0.01" Value="{x:Bind Profile.TFELBlackLevel, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBlackLevel" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELGamma" x:Uid="Globals_TFELGamma">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0.5" Maximum="2.5" StepFrequency="0.05" Value="{x:Bind Profile.TFELGamma, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELGamma" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                </local:SettingsExpander.Items>
+            </local:SettingsExpander>
+            <local:SettingsExpander x:Name="TerminalELBloom" x:Uid="Globals_TerminalELBloom" IsExpanded="True">
+                <local:SettingsExpander.Items>
+                    <local:SettingsCard x:Name="TFELBloomIntensity" x:Uid="Globals_TFELBloomIntensity">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="2" StepFrequency="0.05" Value="{x:Bind Profile.TFELBloomIntensity, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBloomIntensity" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELBloomThreshold" x:Uid="Globals_TFELBloomThreshold">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="1" StepFrequency="0.01" Value="{x:Bind Profile.TFELBloomThreshold, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBloomThreshold" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELBloomRadius" x:Uid="Globals_TFELBloomRadius">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="16" StepFrequency="0.5" Value="{x:Bind Profile.TFELBloomRadius, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBloomRadius" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="TFELBloomSoftness" x:Uid="Globals_TFELBloomSoftness">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="0.5" StepFrequency="0.01" Value="{x:Bind Profile.TFELBloomSoftness, Mode=TwoWay}" />
+                            <local:SettingResetButton Grid.Column="1" Margin="8,0,0,0" SettingName="TFELBloomSoftness" Target="{x:Bind Profile}" />
+                        </Grid>
+                    </local:SettingsCard>
+                </local:SettingsExpander.Items>
+            </local:SettingsExpander>
 
             <!--  Grouping: Transparency  -->
             <TextBlock x:Uid="Profile_TransparencyHeader"

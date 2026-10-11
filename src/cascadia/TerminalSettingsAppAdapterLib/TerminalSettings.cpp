@@ -57,6 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyWindowSettings(windowSettings);
+        settings->_ApplyTFELSettings(globals, profile);
         settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
@@ -401,6 +402,30 @@ namespace winrt::Microsoft::Terminal::Settings
         _TrimBlockSelection = windowSettings.TrimBlockSelection();
         _DetectURLs = windowSettings.DetectURLs();
         _EnableUnfocusedAcrylic = windowSettings.EnableUnfocusedAcrylic();
+    }
+
+    void TerminalSettings::_ApplyTFELSettings(const Model::GlobalAppSettings& globals, const Model::Profile& profile) noexcept
+    {
+#define APPLY_TFEL_SETTING(name) \
+        _##name = (profile.Has##name() || profile.name##OverrideSource()) ? profile.name() : globals.name();
+        APPLY_TFEL_SETTING(TFELBrightness)
+        APPLY_TFEL_SETTING(TFELContrast)
+        APPLY_TFEL_SETTING(TFELBlackLevel)
+        APPLY_TFEL_SETTING(TFELGamma)
+        APPLY_TFEL_SETTING(TFELPhosphorRed)
+        APPLY_TFEL_SETTING(TFELPhosphorGreen)
+        APPLY_TFEL_SETTING(TFELPhosphorBlue)
+        APPLY_TFEL_SETTING(TFELBloomIntensity)
+        APPLY_TFEL_SETTING(TFELBloomThreshold)
+        APPLY_TFEL_SETTING(TFELBloomRadius)
+        APPLY_TFEL_SETTING(TFELBloomSoftness)
+        APPLY_TFEL_SETTING(TFELColorMode)
+        APPLY_TFEL_SETTING(TFELHue)
+        APPLY_TFEL_SETTING(TFELSaturation)
+        APPLY_TFEL_SETTING(TFELGlowHue)
+        APPLY_TFEL_SETTING(TFELGlowSaturation)
+        APPLY_TFEL_SETTING(TFELGlowMix)
+#undef APPLY_TFEL_SETTING
     }
 
     // Method Description:

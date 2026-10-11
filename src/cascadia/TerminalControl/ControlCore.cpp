@@ -53,6 +53,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    static void applyTFELSettings(const IControlSettings& settings, ::Microsoft::Console::Render::Atlas::AtlasEngine& engine,
+                                  const std::optional<std::array<float, 16>>& preview) noexcept
+    {
+        ::Microsoft::Console::Render::Atlas::TFELSettings tfel;
+        tfel.tone = { settings.TFELBrightness(), settings.TFELContrast(), settings.TFELBlackLevel(), settings.TFELGamma() };
+        tfel.phosphorColor = { settings.TFELPhosphorRed(), settings.TFELPhosphorGreen(), settings.TFELPhosphorBlue(), 0.0f };
+        tfel.bloom = { settings.TFELBloomIntensity(), settings.TFELBloomThreshold(), settings.TFELBloomRadius(), settings.TFELBloomSoftness() };
+        tfel.color = { settings.TFELHue(), settings.TFELSaturation(), settings.TFELGlowHue(), settings.TFELGlowSaturation() };
+        tfel.glow = { settings.TFELGlowMix(), 0.0f, 0.0f, 0.0f };
+        if (preview)
+        {
+            const auto& v = *preview;
+            tfel.tone = { v[0], v[1], v[2], v[3] };
+            tfel.bloom = { v[4], v[5], v[6], v[7] };
+            tfel.phosphorColor = { v[8], v[9], v[10], 0.0f };
+            tfel.color = { v[11], v[12], v[13], v[14] };
+            tfel.glow = { v[15], 0.0f, 0.0f, 0.0f };
+        }
+        engine.SetTFELSettings(tfel);
+    }
+
     TextColor SelectionColor::AsTextColor() const noexcept
     {
         if (IsIndex16())
@@ -456,6 +477,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(_settings.PixelShaderImagePath());
+            applyTFELSettings(_settings, *_renderEngine, _tfelPreview);
             _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
             _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
@@ -936,8 +958,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Updates the settings of the current terminal.
+    // - Applies transient TFEL parameters without reloading terminal settings.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
+    void ControlCore::PreviewTFEL(winrt::array_view<const float> values)
+    {
+        if (!values.empty() && values.size() != 16)
+        {
+            throw winrt::hresult_invalid_argument();
+        }
+        const auto lock = _terminal->LockForWriting();
+        _tfelPreview.reset();
+        if (!values.empty())
+        {
+            auto& preview = _tfelPreview.emplace();
+            std::copy(values.begin(), values.end(), preview.begin());
+        }
+        if (_initializedTerminal.load(std::memory_order_relaxed))
+        {
+            applyTFELSettings(_settings, *_renderEngine, _tfelPreview);
+            _renderer->TriggerRedrawAll(true, true);
+        }
+    }
+
+    // Updates the settings of the current terminal. The caller must not hold its writing lock.
     void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
         _settings = settings;
@@ -964,6 +1007,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_initializedTerminal.load(std::memory_order_relaxed))
             {
+                applyTFELSettings(_settings, *_renderEngine, _tfelPreview);
                 _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
                 _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
                 _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());

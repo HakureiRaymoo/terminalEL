@@ -97,5 +97,22 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
         INHERITABLE_PROFILE_SETTING(String, DragDropDelimiter);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBrightness);
+        INHERITABLE_PROFILE_SETTING(Single, TFELContrast);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBlackLevel);
+        INHERITABLE_PROFILE_SETTING(Single, TFELGamma);
+        INHERITABLE_PROFILE_SETTING(Single, TFELPhosphorRed);
+        INHERITABLE_PROFILE_SETTING(Single, TFELPhosphorGreen);
+        INHERITABLE_PROFILE_SETTING(Single, TFELPhosphorBlue);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBloomIntensity);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBloomThreshold);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBloomRadius);
+        INHERITABLE_PROFILE_SETTING(Single, TFELBloomSoftness);
+        INHERITABLE_PROFILE_SETTING(String, TFELColorMode);
+        INHERITABLE_PROFILE_SETTING(Single, TFELHue);
+        INHERITABLE_PROFILE_SETTING(Single, TFELSaturation);
+        INHERITABLE_PROFILE_SETTING(Single, TFELGlowHue);
+        INHERITABLE_PROFILE_SETTING(Single, TFELGlowSaturation);
+        INHERITABLE_PROFILE_SETTING(Single, TFELGlowMix);
     }
 }

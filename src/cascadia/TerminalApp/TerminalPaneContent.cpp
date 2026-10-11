@@ -7,6 +7,7 @@
 #include <mmsystem.h>
 
 #include "TerminalSettingsCache.h"
+#include "TFELPreview.h"
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
@@ -28,6 +29,7 @@ namespace winrt::TerminalApp::implementation
         _profile{ profile }
     {
         _setupControlEvents();
+        TFELPreview::Register(_control, _profile.Guid());
     }
 
     void TerminalPaneContent::_setupControlEvents()
@@ -70,6 +72,7 @@ namespace winrt::TerminalApp::implementation
         // We deliberately remove the event handlers before closing the control.
         // This is to prevent reentrancy issues, pointless callbacks, etc.
         _removeControlEvents();
+        TFELPreview::Unregister(_control);
 
         _control.Close();
     }

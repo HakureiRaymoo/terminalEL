@@ -58,6 +58,29 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
+        struct alignas(16) TFELConstants
+        {
+            // x = brightness, y = contrast, z = blackLevel, w = gammaExponent.
+            alignas(16) f32x4 tone{ 1.0f, 1.0f, 0.0f, 1.0f };
+            // xyz = phosphor RGB, w = reserved.
+            alignas(16) f32x4 phosphorColor{ 1.0f, 0.82f, 0.04f, 0.0f };
+            // intensity, threshold, radius (full-resolution pixels), softness.
+            // Temporary amplified intensity for visual verification.
+            alignas(16) f32x4 bloom{ 0.6f, 0.30f, 8.0f, 0.10f };
+            // Inverse source dimensions and blur direction.
+            alignas(16) f32x4 bloomSampling{};
+            // Resolved halo RGB; w is reserved.
+            alignas(16) f32x4 glowColor{ 1.0f, 0.30f, 0.0f, 0.0f };
+        };
+
+        static_assert(sizeof(TFELConstants) == 80);
+        static_assert(alignof(TFELConstants) == 16);
+        static_assert(offsetof(TFELConstants, tone) == 0);
+        static_assert(offsetof(TFELConstants, phosphorColor) == 16);
+        static_assert(offsetof(TFELConstants, bloom) == 32);
+        static_assert(offsetof(TFELConstants, bloomSampling) == 48);
+        static_assert(offsetof(TFELConstants, glowColor) == 64);
+
         enum class ShadingType : u8 // u8 so that it packs perfectly into AtlasGlyphEntry
         {
             Default = 0,
@@ -262,6 +285,9 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
+        void _executeTFELShader(RenderingPayload& p);
+        void _recreateTFELRenderTarget(const RenderingPayload& p);
+        void _releaseTFELBloomTargets() noexcept;
 
         wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
         wil::com_ptr<ID3D11InputLayout> _inputLayout;
@@ -288,6 +314,30 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11ShaderResourceView> _customShaderTextureView;
         u64 _customShaderPerfTickMod = 0;
         f32 _customShaderSecsPerPerfTick = 0;
+
+        wil::com_ptr<ID3D11RenderTargetView> _tfelRenderTargetView;
+        wil::com_ptr<ID3D11Texture2D> _tfelOffscreenTexture;
+        wil::com_ptr<ID3D11ShaderResourceView> _tfelOffscreenTextureView;
+        wil::com_ptr<ID3D11VertexShader> _tfelVertexShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelPixelShader;
+        wil::com_ptr<ID3D11SamplerState> _tfelSamplerState;
+        TFELConstants _tfelParameters;
+        wil::com_ptr<ID3D11Buffer> _tfelConstantBuffer;
+        struct TFELTarget
+        {
+            wil::com_ptr<ID3D11Texture2D> texture;
+            wil::com_ptr<ID3D11RenderTargetView> rtv;
+            wil::com_ptr<ID3D11ShaderResourceView> srv;
+        };
+        TFELTarget _tfelEmission;
+        TFELTarget _tfelBloomA;
+        TFELTarget _tfelBloomB;
+        u16x2 _tfelEmissionSize{};
+        u16x2 _tfelBloomSize{};
+        wil::com_ptr<ID3D11PixelShader> _tfelExtractShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelBlurShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelCompositeShader;
+        wil::com_ptr<ID3D11RasterizerState> _tfelRasterizerState;
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
         wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;
@@ -319,6 +369,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _miscGeneration;
+        til::generation_t _tfelGeneration;
         u16x2 _targetSize{};
         u16x2 _viewportCellCount{};
         ShadingType _textShadingType = ShadingType::Default;

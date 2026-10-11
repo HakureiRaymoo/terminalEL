@@ -54,7 +54,42 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
         TEST_METHOD(TestInitialPositionParsing);
+        TEST_METHOD(TFELInheritance);
     };
+
+    void TerminalSettingsTests::TFELInheritance()
+    {
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(R"({
+            "terminalEL.brightness": 1.5,
+            "terminalEL.bloomRadius": 12.0,
+            "profiles": {
+                "defaults": { "terminalEL.bloomRadius": 6.0 },
+                "list": [{ "name": "tfel", "commandline": "cmd.exe" }]
+            }
+        })");
+        const auto profile = settings->ActiveProfiles().GetAt(0);
+        const auto resolve = [&]() {
+            return TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), profile).DefaultSettings();
+        };
+        VERIFY_IS_FALSE(profile.HasTFELBrightness());
+        VERIFY_IS_FALSE(profile.HasTFELBloomRadius());
+        VERIFY_ARE_EQUAL(1.5f, resolve()->TFELBrightness());
+        VERIFY_ARE_EQUAL(6.0f, resolve()->TFELBloomRadius());
+
+        profile.TFELBrightness(0.0f);
+        profile.TFELBloomRadius(0.0f);
+        VERIFY_ARE_EQUAL(0.0f, resolve()->TFELBrightness());
+        VERIFY_ARE_EQUAL(0.0f, resolve()->TFELBloomRadius());
+
+        profile.ClearTFELBrightness();
+        profile.ClearTFELBloomRadius();
+        VERIFY_ARE_EQUAL(1.5f, resolve()->TFELBrightness());
+        VERIFY_ARE_EQUAL(6.0f, resolve()->TFELBloomRadius());
+
+        settings->ProfileDefaults().ClearTFELBloomRadius();
+        VERIFY_ARE_EQUAL(12.0f, resolve()->TFELBloomRadius());
+        VERIFY_IS_FALSE(profile.HasTFELBloomRadius());
+    }
 
     // CascadiaSettings::_normalizeCommandLine abuses some aspects from CommandLineToArgvW
     // to simplify the implementation. It assumes that all arguments returned by

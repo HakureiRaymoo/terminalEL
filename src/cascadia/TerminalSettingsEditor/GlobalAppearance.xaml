@@ -25,7 +25,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Style="{StaticResource SettingsStackStyle}" GotFocus="TFELNumber_GotFocus">
 
         <!--  Section: Visual style  -->
         <TextBlock x:Uid="Globals_Section_VisualStyle"
@@ -62,6 +62,155 @@
                                     ContentAlignment="Left">
                     <CheckBox x:Uid="Globals_EnableUnfocusedAcrylic"
                               IsChecked="{x:Bind ViewModel.EnableUnfocusedAcrylic, Mode=TwoWay}" />
+                </local:SettingsCard>
+            </local:SettingsExpander.Items>
+        </local:SettingsExpander>
+
+        <!-- terminalEL display model -->
+        <local:SettingsCard x:Uid="TFELPresetCard">
+            <StackPanel Spacing="8">
+                <TextBlock Text="{x:Bind ViewModel.TFELCurrentPresetStatus, Mode=OneWay}" MaxWidth="300" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                <ComboBox x:Name="TFELPresetPicker" x:Uid="TFELPresetPickerLabel" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Uid="TFELApply" Click="ApplyTFELPreset_Click" />
+                    <Button x:Uid="TFELExport" Click="ExportTFELPreset_Click" />
+                    <Button x:Uid="TFELImport" Click="ImportTFELPreset_Click" />
+                </StackPanel>
+                <TextBox x:Name="TFELPresetName" x:Uid="TFELPresetNameLabel" MaxLength="80" />
+                <Button x:Uid="TFELCreate" Click="CreateTFELPreset_Click" />
+                <Button x:Uid="TFELUpdate" Click="UpdateTFELPreset_Click" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Uid="TFELRename" Click="RenameTFELPreset_Click" />
+                    <Button x:Uid="TFELDelete" Click="DeleteTFELPreset_Click" />
+                </StackPanel>
+                <TextBlock x:Name="TFELPresetStatus" MaxWidth="300" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+            </StackPanel>
+        </local:SettingsCard>
+        <local:SettingsExpander x:Uid="TFELColor">
+            <local:SettingsExpander.Items>
+                <local:SettingsCard x:Uid="TFELHueCard">
+                    <StackPanel>
+                        <Slider x:Uid="TFELHueInput" Width="240" Minimum="-180" Maximum="180" StepFrequency="1" Value="{x:Bind ViewModel.TFELHue, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELHueInput" Minimum="-180" Maximum="180" SmallChange="1" Tag="TFELHue" Value="{x:Bind ViewModel.TFELHue, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="TFELSaturationCard">
+                    <StackPanel>
+                        <Slider x:Uid="TFELSaturationInput" Width="240" Minimum="0" Maximum="2" StepFrequency="0.01" Value="{x:Bind ViewModel.TFELSaturation, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELSaturationInput" Minimum="0" Maximum="2" SmallChange="0.01" Tag="TFELSaturation" Value="{x:Bind ViewModel.TFELSaturation, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="TFELIndependentCard">
+                    <ToggleSwitch x:Uid="TFELIndependentInput" IsOn="{x:Bind ViewModel.TFELIndependentGlow, Mode=TwoWay}" />
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="TFELGlowHueCard">
+                    <StackPanel>
+                        <Slider x:Uid="TFELGlowHueInput" Width="240" Minimum="0" Maximum="360" StepFrequency="1" Value="{x:Bind ViewModel.TFELGlowHue, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELGlowHueInput" Minimum="0" Maximum="360" SmallChange="1" Tag="TFELGlowHue" Value="{x:Bind ViewModel.TFELGlowHue, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="TFELGlowSaturationCard">
+                    <StackPanel>
+                        <Slider x:Uid="TFELGlowSaturationInput" Width="240" Minimum="0" Maximum="1" StepFrequency="0.01" Value="{x:Bind ViewModel.TFELGlowSaturation, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELGlowSaturationInput" Minimum="0" Maximum="1" SmallChange="0.01" Tag="TFELGlowSaturation" Value="{x:Bind ViewModel.TFELGlowSaturation, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="TFELGlowMixCard">
+                    <StackPanel>
+                        <Slider x:Uid="TFELGlowMixInput" Width="240" Minimum="0" Maximum="1" StepFrequency="0.01" Value="{x:Bind ViewModel.TFELGlowMix, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELGlowMixInput" Minimum="0" Maximum="1" SmallChange="0.01" Tag="TFELGlowMix" Value="{x:Bind ViewModel.TFELGlowMix, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+            </local:SettingsExpander.Items>
+        </local:SettingsExpander>
+        <TextBlock x:Uid="Globals_Section_TerminalEL"
+                   Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+        <local:SettingsExpander x:Name="TerminalELTone"
+                                x:Uid="Globals_TerminalELTone"
+                                IsExpanded="True">
+            <local:SettingsExpander.HeaderIcon>
+                <FontIcon Glyph="&#xE706;" />
+            </local:SettingsExpander.HeaderIcon>
+            <local:SettingsExpander.Items>
+                <local:SettingsCard x:Uid="Globals_TFELBrightness">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBrightnessInput" Minimum="0"
+                                Maximum="2"
+                                StepFrequency="0.05"
+                                Value="{x:Bind ViewModel.TFELBrightness, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBrightnessInput" Minimum="0" Maximum="2" SmallChange="0.05" Tag="TFELBrightness" Value="{x:Bind ViewModel.TFELBrightness, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELContrast">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELContrastInput" Minimum="0"
+                                Maximum="2"
+                                StepFrequency="0.05"
+                                Value="{x:Bind ViewModel.TFELContrast, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELContrastInput" Minimum="0" Maximum="2" SmallChange="0.05" Tag="TFELContrast" Value="{x:Bind ViewModel.TFELContrast, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELBlackLevel">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBlackLevelInput" Minimum="0"
+                                Maximum="0.5"
+                                StepFrequency="0.01"
+                                Value="{x:Bind ViewModel.TFELBlackLevel, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBlackLevelInput" Minimum="0" Maximum="0.5" SmallChange="0.01" Tag="TFELBlackLevel" Value="{x:Bind ViewModel.TFELBlackLevel, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELGamma">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELGammaInput" Minimum="0.5"
+                                Maximum="2.5"
+                                StepFrequency="0.05"
+                                Value="{x:Bind ViewModel.TFELGamma, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELGammaInput" Minimum="0.5" Maximum="2.5" SmallChange="0.05" Tag="TFELGamma" Value="{x:Bind ViewModel.TFELGamma, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+            </local:SettingsExpander.Items>
+        </local:SettingsExpander>
+
+        <local:SettingsExpander x:Name="TerminalELBloom"
+                                x:Uid="Globals_TerminalELBloom"
+                                IsExpanded="True">
+            <local:SettingsExpander.Items>
+                <local:SettingsCard x:Uid="Globals_TFELBloomIntensity">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBloomIntensityInput" Minimum="0"
+                                Maximum="2"
+                                StepFrequency="0.05"
+                                Value="{x:Bind ViewModel.TFELBloomIntensity, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBloomIntensityInput" Minimum="0" Maximum="2" SmallChange="0.05" Tag="TFELBloomIntensity" Value="{x:Bind ViewModel.TFELBloomIntensity, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELBloomThreshold">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBloomThresholdInput" Minimum="0"
+                                Maximum="1"
+                                StepFrequency="0.01"
+                                Value="{x:Bind ViewModel.TFELBloomThreshold, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBloomThresholdInput" Minimum="0" Maximum="1" SmallChange="0.01" Tag="TFELBloomThreshold" Value="{x:Bind ViewModel.TFELBloomThreshold, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELBloomRadius">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBloomRadiusInput" Minimum="0"
+                                Maximum="16"
+                                StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.TFELBloomRadius, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBloomRadiusInput" Minimum="0" Maximum="16" SmallChange="0.5" Tag="TFELBloomRadius" Value="{x:Bind ViewModel.TFELBloomRadius, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Uid="Globals_TFELBloomSoftness">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELBloomSoftnessInput" Minimum="0"
+                                Maximum="0.5"
+                                StepFrequency="0.01"
+                                Value="{x:Bind ViewModel.TFELBloomSoftness, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELBloomSoftnessInput" Minimum="0" Maximum="0.5" SmallChange="0.01" Tag="TFELBloomSoftness" Value="{x:Bind ViewModel.TFELBloomSoftness, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
                 </local:SettingsCard>
             </local:SettingsExpander.Items>
         </local:SettingsExpander>

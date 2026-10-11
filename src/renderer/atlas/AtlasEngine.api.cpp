@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AtlasEngine.h"
+#include <cmath>
 
 #include "Backend.h"
 #include "../../buffer/out/textBuffer.hpp"
@@ -446,6 +447,32 @@ void AtlasEngine::SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept
     {
         _api.s.write()->target.write()->graphicsAPI = graphicsAPI;
     }
+}
+
+void AtlasEngine::SetTFELSettings(const TFELSettings& settings) noexcept
+{
+    auto normalized = settings;
+    const TFELSettings defaults;
+    const auto clamp = [](float value, float low, float high, float fallback) {
+        return std::isfinite(value) ? std::clamp(value, low, high) : fallback;
+    };
+    normalized.tone = { clamp(settings.tone.x, 0.0f, 2.0f, defaults.tone.x),
+                        clamp(settings.tone.y, 0.0f, 2.0f, defaults.tone.y),
+                        clamp(settings.tone.z, 0.0f, 0.5f, defaults.tone.z),
+                        clamp(settings.tone.w, 0.5f, 2.5f, defaults.tone.w) };
+    normalized.phosphorColor = { clamp(settings.phosphorColor.x, 0.0f, 1.0f, defaults.phosphorColor.x),
+                                 clamp(settings.phosphorColor.y, 0.0f, 1.0f, defaults.phosphorColor.y),
+                                 clamp(settings.phosphorColor.z, 0.0f, 1.0f, defaults.phosphorColor.z), 0.0f };
+    normalized.bloom = { clamp(settings.bloom.x, 0.0f, 2.0f, defaults.bloom.x),
+                         clamp(settings.bloom.y, 0.0f, 1.0f, defaults.bloom.y),
+                         clamp(settings.bloom.z, 0.0f, 16.0f, defaults.bloom.z),
+                         clamp(settings.bloom.w, 0.0f, 0.5f, defaults.bloom.w) };
+    normalized.color = { clamp(settings.color.x, -180.0f, 180.0f, defaults.color.x),
+                         clamp(settings.color.y, 0.0f, 2.0f, defaults.color.y),
+                         clamp(settings.color.z, 0.0f, 360.0f, defaults.color.z),
+                         clamp(settings.color.w, 0.0f, 1.0f, defaults.color.w) };
+    normalized.glow = { clamp(settings.glow.x, 0.0f, 1.0f, defaults.glow.x), 0.0f, 0.0f, 0.0f };
+    *_api.s.write()->tfel.write() = normalized;
 }
 
 void AtlasEngine::SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept

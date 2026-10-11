@@ -31,8 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         // font face
         static void UpdateFontList() noexcept;
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept;
+        static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept;
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
@@ -170,6 +170,62 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
         PROFILE_INHERITABLE_SETTINGS(PROFILE_GEN_PROJECTED)
 #undef PROFILE_GEN_PROJECTED
+
+        // TFEL falls back to the global value only after exhausting profile inheritance.
+#define PROFILE_TFEL_SETTINGS(X) \
+    X(TFELBrightness)            \
+    X(TFELContrast)              \
+    X(TFELBlackLevel)            \
+    X(TFELGamma)                 \
+    X(TFELBloomIntensity)        \
+    X(TFELBloomThreshold)        \
+    X(TFELBloomRadius)           \
+    X(TFELBloomSoftness)         \
+    X(TFELPhosphorRed)          \
+    X(TFELPhosphorGreen)        \
+    X(TFELPhosphorBlue)         \
+    X(TFELHue)                 \
+    X(TFELSaturation)          \
+    X(TFELGlowHue)             \
+    X(TFELGlowSaturation)      \
+    X(TFELGlowMix)
+
+#define PROFILE_GEN_TFEL(name)                                                     \
+    float name() const                                                            \
+    {                                                                             \
+        return (_profile.Has##name() || _profile.name##OverrideSource())           \
+                   ? _profile.name()                                             \
+                   : _appSettings.GlobalSettings().name();                       \
+    }                                                                             \
+    void name(float value)                                                        \
+    {                                                                             \
+        if (name() != value)                                                      \
+        {                                                                         \
+            _profile.name(value);                                                 \
+            _NotifyChanges(L"Has" #name, L## #name);                              \
+        }                                                                         \
+    }                                                                             \
+    bool Has##name() const { return _profile.Has##name(); }                        \
+    void Clear##name()                                                            \
+    {                                                                             \
+        if (_profile.Has##name())                                                 \
+        {                                                                         \
+            _profile.Clear##name();                                               \
+            _NotifyChanges(L"Has" #name, L## #name);                              \
+        }                                                                         \
+    }                                                                             \
+    Windows::Foundation::IInspectable name##OverrideSource() const                 \
+    {                                                                             \
+        if (const auto source = _profile.name##OverrideSource())                  \
+        {                                                                         \
+            return source;                                                        \
+        }                                                                         \
+        return _appSettings.GlobalSettings();                                     \
+    }
+        PROFILE_TFEL_SETTINGS(PROFILE_GEN_TFEL)
+#undef PROFILE_GEN_TFEL
+        bool TFELIndependentGlow() const { return TFELGlowMix() > 0.0f; }
+        void TFELIndependentGlow(bool value) { TFELGlowMix(value ? 1.0f : 0.0f); }
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

@@ -89,4 +89,21 @@
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
     X(bool, RightClickContextMenu, false)                                                                                                                \
     X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)  \
-    X(winrt::hstring, DragDropDelimiter, L" ")
+    X(winrt::hstring, DragDropDelimiter, L" ")                                                                                                           \
+    X(float, TFELBrightness, 1.0f)                                                                                                                        \
+    X(float, TFELContrast, 1.0f)                                                                                                                          \
+    X(float, TFELBlackLevel, 0.0f)                                                                                                                        \
+    X(float, TFELGamma, 1.0f)                                                                                                                             \
+    X(float, TFELPhosphorRed, 1.0f)                                                                                                                       \
+    X(float, TFELPhosphorGreen, 0.82f)                                                                                                                    \
+    X(float, TFELPhosphorBlue, 0.04f)                                                                                                                     \
+    X(float, TFELHue, 0.0f) \
+    X(float, TFELSaturation, 1.0f) \
+    X(float, TFELGlowHue, 18.0f) \
+    X(float, TFELGlowSaturation, 1.0f) \
+    X(float, TFELGlowMix, 1.0f) \
+    X(float, TFELBloomIntensity, 0.6f)                                                                                                                    \
+    X(float, TFELBloomThreshold, 0.30f)                                                                                                                   \
+    X(float, TFELBloomRadius, 8.0f)                                                                                                                        \
+    X(float, TFELBloomSoftness, 0.10f)                                                                                                                     \
+    X(winrt::hstring, TFELColorMode, L"monochrome")

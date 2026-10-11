@@ -95,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Detach();
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
+        void PreviewTFEL(winrt::array_view<const float> values);
         void ApplyAppearance(const bool focused);
         void SetHighContrastMode(const bool enabled);
         Control::IControlSettings Settings();
@@ -422,6 +423,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         IControlSettings _settings{ nullptr };
+        std::optional<std::array<float, 16>> _tfelPreview;
         bool _hasUnfocusedAppearance{ false };
         IControlAppearance _unfocusedAppearance{ nullptr };
         Core::ICoreScheme _focusedColorSchemeOverride{ nullptr };

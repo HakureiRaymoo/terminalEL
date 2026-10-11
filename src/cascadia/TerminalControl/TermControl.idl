@@ -45,6 +45,7 @@ namespace Microsoft.Terminal.Control
                                                              Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
+        void PreviewTFEL(Single[] values);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
         void ApplyPreviewColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);

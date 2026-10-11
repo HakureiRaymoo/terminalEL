@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void TFELNumber_GotFocus(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&);
+        void TFELNumber_ValueChanged(const Microsoft::UI::Xaml::Controls::NumberBox&, const Microsoft::UI::Xaml::Controls::NumberBoxValueChangedEventArgs&);
 
         Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot.get(); };
 
@@ -33,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
         winrt::weak_ref<Editor::IHostedInWindow> _weakWindowRoot;
+        winrt::weak_ref<Microsoft::UI::Xaml::Controls::NumberBox> _activeTFELNumber;
     };
 };
 

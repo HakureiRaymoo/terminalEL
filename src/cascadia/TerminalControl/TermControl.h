@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content);
 
         void UpdateControlSettings(Control::IControlSettings settings);
+        void PreviewTFEL(winrt::array_view<const float> values);
         void UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 

@@ -49,6 +49,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //  unique view model members.
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"TFELGlowMix")
+            {
+                _NotifyChanges(L"TFELIndependentGlow");
+            }
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
@@ -144,12 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _lastStartingDirectoryPath = StartingDirectory();
         }
 
-        // generate the font list, if we don't have one
-        if (!_FontList || !_MonospaceFontList)
-        {
-            UpdateFontList();
-        }
-
         if (profile.HasUnfocusedAppearance())
         {
             _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
@@ -236,6 +234,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return *Settings::TerminalSettings::CreateForPreviewUnfocused(_appSettings, _windowSettings, _profile);
     }
 
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::CompleteFontList() noexcept
+    {
+        if (!_FontList || !_MonospaceFontList)
+        {
+            UpdateFontList();
+        }
+        return _FontList;
+    }
+
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::MonospaceFontList() noexcept
+    {
+        if (!_FontList || !_MonospaceFontList)
+        {
+            UpdateFontList();
+        }
+        return _MonospaceFontList;
+    }
+
+    // Enumerate only when the appearance page requests a font list. Constructing
+    // the settings navigation's profile view models must not scan system fonts.
     // Method Description:
     // - Updates the lists of fonts and sorts them alphabetically
     void ProfileViewModel::UpdateFontList() noexcept
@@ -403,6 +421,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+        PROFILE_TFEL_SETTINGS(HANDLE)
 #undef HANDLE_PROJECTED
 #undef HANDLE
         return false;
@@ -419,6 +438,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+        PROFILE_TFEL_SETTINGS(HANDLE)
 #undef HANDLE_PROJECTED
 #undef HANDLE
     }
@@ -433,6 +453,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+        PROFILE_TFEL_SETTINGS(HANDLE)
 #undef HANDLE_PROJECTED
 #undef HANDLE
         return nullptr;
@@ -445,6 +466,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                   "XAML reset buttons.");
 #undef PROFILE_COUNT
 #undef PROFILE_INHERITABLE_SETTINGS
+#undef PROFILE_TFEL_SETTINGS
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {

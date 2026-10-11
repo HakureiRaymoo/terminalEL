@@ -127,6 +127,7 @@
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="TFELPresets.h" />
     <ClInclude Include="GlobalAppearanceViewModel.h">
       <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
       <SubType>Code</SubType>

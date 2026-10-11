@@ -67,6 +67,24 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Single, TFELBrightness);
+        INHERITABLE_SETTING(Single, TFELContrast);
+        INHERITABLE_SETTING(Single, TFELBlackLevel);
+        INHERITABLE_SETTING(Single, TFELGamma);
+        INHERITABLE_SETTING(Single, TFELPhosphorRed);
+        INHERITABLE_SETTING(Single, TFELPhosphorGreen);
+        INHERITABLE_SETTING(Single, TFELPhosphorBlue);
+        INHERITABLE_SETTING(Single, TFELBloomIntensity);
+        INHERITABLE_SETTING(Single, TFELBloomThreshold);
+        INHERITABLE_SETTING(Single, TFELBloomRadius);
+        INHERITABLE_SETTING(Single, TFELBloomSoftness);
+        INHERITABLE_SETTING(String, TFELColorMode);
+        INHERITABLE_SETTING(String, TFELUserPresets);
+        INHERITABLE_SETTING(Single, TFELHue);
+        INHERITABLE_SETTING(Single, TFELSaturation);
+        INHERITABLE_SETTING(Single, TFELGlowHue);
+        INHERITABLE_SETTING(Single, TFELGlowSaturation);
+        INHERITABLE_SETTING(Single, TFELGlowMix);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
         // ---- Color schemes ----

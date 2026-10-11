@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept;
+        void _ApplyTFELSettings(const Model::GlobalAppSettings& globals, const Model::Profile& profile) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);

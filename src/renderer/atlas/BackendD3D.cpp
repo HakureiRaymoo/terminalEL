@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "BackendD3D.h"
+#include <cmath>
 
 #include <til/unicode.h>
 
@@ -13,6 +14,11 @@
 
 #include <shader_ps.h>
 #include <shader_vs.h>
+#include <tfel_shader_ps.h>
+#include <tfel_shader_vs.h>
+#include <tfel_bloom_extract_ps.h>
+#include <tfel_bloom_blur_ps.h>
+#include <tfel_composite_ps.h>
 
 #include "BuiltinGlyphs.h"
 #include "dwrite_helpers.h"
@@ -66,10 +72,70 @@ static u64 queryPerfCount() noexcept
     return std::bit_cast<u64>(li.QuadPart);
 }
 
+// Called only for parameter changes. Keep HSV work out of the fullscreen shader.
+static f32x4 tfelHsvToRgb(float hue, float saturation, float value) noexcept
+{
+    hue = hue / 360.0f - std::floor(hue / 360.0f);
+    const auto channel = [&](float offset) {
+        const auto phase = hue + offset - std::floor(hue + offset);
+        const auto rgb = std::clamp(std::abs(phase * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
+        return value * (1.0f + saturation * (rgb - 1.0f));
+    };
+    return { channel(0.0f), channel(2.0f / 3.0f), channel(1.0f / 3.0f), 0.0f };
+}
+
+static f32x4 tfelCoreColor(const TFELSettings& settings) noexcept
+{
+    const auto rgb = settings.phosphorColor;
+    // Preserve the exact legacy color when no adjustment is requested.
+    if (settings.color.x == 0.0f && settings.color.y == 1.0f)
+    {
+        return rgb;
+    }
+    const auto high = std::max({ rgb.x, rgb.y, rgb.z });
+    const auto low = std::min({ rgb.x, rgb.y, rgb.z });
+    const auto delta = high - low;
+    auto hue = 0.0f;
+    if (delta > 0.0f)
+    {
+        if (high == rgb.x) hue = (rgb.y - rgb.z) / delta;
+        else if (high == rgb.y) hue = (rgb.z - rgb.x) / delta + 2.0f;
+        else hue = (rgb.x - rgb.y) / delta + 4.0f;
+        hue *= 60.0f;
+    }
+    const auto saturation = high > 0.0f ? delta / high : 0.0f;
+    return tfelHsvToRgb(hue + settings.color.x, std::clamp(saturation * settings.color.y, 0.0f, 1.0f), high);
+}
+
 BackendD3D::BackendD3D(const RenderingPayload& p)
 {
     THROW_IF_FAILED(p.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
     THROW_IF_FAILED(p.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _pixelShader.addressof()));
+    THROW_IF_FAILED(p.device->CreateVertexShader(&tfel_shader_vs[0], sizeof(tfel_shader_vs), nullptr, _tfelVertexShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(&tfel_shader_ps[0], sizeof(tfel_shader_ps), nullptr, _tfelPixelShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_bloom_extract_ps, sizeof(tfel_bloom_extract_ps), nullptr, _tfelExtractShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_bloom_blur_ps, sizeof(tfel_bloom_blur_ps), nullptr, _tfelBlurShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_composite_ps, sizeof(tfel_composite_ps), nullptr, _tfelCompositeShader.addressof()));
+    {
+        D3D11_RASTERIZER_DESC desc{};
+        desc.FillMode = D3D11_FILL_SOLID;
+        desc.CullMode = D3D11_CULL_NONE;
+        desc.DepthClipEnable = TRUE;
+        THROW_IF_FAILED(p.device->CreateRasterizerState(&desc, _tfelRasterizerState.addressof()));
+    }
+
+    {
+        static constexpr D3D11_SAMPLER_DESC desc{
+            .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+            .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+            .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+            .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+            .MaxAnisotropy = 1,
+            .ComparisonFunc = D3D11_COMPARISON_ALWAYS,
+            .MaxLOD = D3D11_FLOAT32_MAX,
+        };
+        THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _tfelSamplerState.addressof()));
+    }
 
     {
         static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
@@ -134,6 +200,16 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
         };
         THROW_IF_FAILED(p.device->CreateBuffer(&desc, nullptr, _psConstantBuffer.addressof()));
+    }
+
+    {
+        static constexpr D3D11_BUFFER_DESC desc{
+            .ByteWidth = sizeof(TFELConstants),
+            .Usage = D3D11_USAGE_DEFAULT,
+            .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+        };
+        const D3D11_SUBRESOURCE_DATA initialData{ &_tfelParameters };
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, &initialData, _tfelConstantBuffer.addressof()));
     }
 
     {
@@ -205,6 +281,8 @@ void BackendD3D::ReleaseResources() noexcept
 {
     _renderTargetView.reset();
     _customRenderTargetView.reset();
+    _tfelRenderTargetView.reset();
+    _releaseTFELBloomTargets();
     // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
     _generation = {};
 }
@@ -219,7 +297,12 @@ void BackendD3D::Render(RenderingPayload& p)
     _debugUpdateShaders(p);
 
     // After a Present() the render target becomes unbound.
-    p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
+    ID3D11RenderTargetView* normalRenderTarget = _customPixelShader ? _customRenderTargetView.get() : _tfelRenderTargetView.get();
+    if (!normalRenderTarget)
+    {
+        normalRenderTarget = _renderTargetView.get();
+    }
+    p.deviceContext->OMSetRenderTargets(1, &normalRenderTarget, nullptr);
 
     // Invalidating the render target helps with spotting invalid quad instances and Present1() bugs.
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_DUMP_RENDER_TARGET
@@ -238,6 +321,10 @@ void BackendD3D::Render(RenderingPayload& p)
     if (_customPixelShader)
     {
         _executeCustomShader(p);
+    }
+    else
+    {
+        _executeTFELShader(p);
     }
 
     _debugDumpRenderTarget(p);
@@ -259,6 +346,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto miscChanged = _miscGeneration != p.s->misc.generation();
+    const auto tfelChanged = _tfelGeneration != p.s->tfel.generation();
     const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (fontChanged)
@@ -268,6 +356,19 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     if (miscChanged)
     {
         _recreateCustomShader(p);
+    }
+    if (tfelChanged)
+    {
+        const auto& settings = *p.s->tfel;
+        _tfelParameters.tone = settings.tone;
+        _tfelParameters.phosphorColor = tfelCoreColor(settings);
+        const auto core = _tfelParameters.phosphorColor;
+        const auto halo = tfelHsvToRgb(settings.color.z, settings.color.w, std::max({ core.x, core.y, core.z }));
+        const auto mix = settings.glow.x;
+        _tfelParameters.glowColor = { core.x + (halo.x - core.x) * mix,
+                                      core.y + (halo.y - core.y) * mix,
+                                      core.z + (halo.z - core.z) * mix, 0.0f };
+        _tfelParameters.bloom = settings.bloom;
     }
     if (cellCountChanged)
     {
@@ -280,6 +381,10 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     {
         _recreateCustomRenderTargetView(p);
     }
+    if (!_customPixelShader && (!_tfelRenderTargetView || !_tfelEmission.rtv || !_tfelBloomA.rtv || !_tfelBloomB.rtv || _tfelEmissionSize != p.s->targetSize))
+    {
+        _recreateTFELRenderTarget(p);
+    }
 
     _recreateConstBuffer(p);
     _setupDeviceContextState(p);
@@ -287,8 +392,71 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _miscGeneration = p.s->misc.generation();
+    _tfelGeneration = p.s->tfel.generation();
     _targetSize = p.s->targetSize;
     _viewportCellCount = p.s->viewportCellCount;
+}
+
+void BackendD3D::_recreateTFELRenderTarget(const RenderingPayload& p)
+{
+    constexpr UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_LOAD | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+    for (const auto format : { DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R16_FLOAT })
+    {
+        UINT support = 0;
+        THROW_IF_FAILED(p.device->CheckFormatSupport(format, &support));
+        if ((support & required) != required)
+        {
+            LOG_HR_MSG(DXGI_ERROR_UNSUPPORTED, "TFEL format %u: support=0x%X required=0x%X", static_cast<UINT>(format), support, required);
+        }
+        THROW_HR_IF(DXGI_ERROR_UNSUPPORTED, (support & required) != required);
+    }
+    _tfelRenderTargetView.reset();
+    _releaseTFELBloomTargets();
+    _tfelOffscreenTexture.reset();
+    _tfelOffscreenTextureView.reset();
+
+    const D3D11_TEXTURE2D_DESC desc{
+        .Width = p.s->targetSize.x,
+        .Height = p.s->targetSize.y,
+        .MipLevels = 1,
+        .ArraySize = 1,
+        .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+        .SampleDesc = { 1, 0 },
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+    };
+    THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _tfelOffscreenTexture.addressof()));
+    THROW_IF_FAILED(p.device->CreateShaderResourceView(_tfelOffscreenTexture.get(), nullptr, _tfelOffscreenTextureView.addressof()));
+    THROW_IF_FAILED(p.device->CreateRenderTargetView(_tfelOffscreenTexture.get(), nullptr, _tfelRenderTargetView.addressof()));
+    const u16x2 full = p.s->targetSize;
+    const u16x2 half{ static_cast<u16>(std::max(1u, (static_cast<UINT>(full.x) + 1) / 2)), static_cast<u16>(std::max(1u, (static_cast<UINT>(full.y) + 1) / 2)) };
+    const auto create = [&](TFELTarget& target, u16x2 size, DXGI_FORMAT format) {
+        D3D11_TEXTURE2D_DESC targetDesc{};
+        targetDesc.Width = size.x;
+        targetDesc.Height = size.y;
+        targetDesc.MipLevels = 1;
+        targetDesc.ArraySize = 1;
+        targetDesc.Format = format;
+        targetDesc.SampleDesc.Count = 1;
+        targetDesc.Usage = D3D11_USAGE_DEFAULT;
+        targetDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        THROW_IF_FAILED(p.device->CreateTexture2D(&targetDesc, nullptr, target.texture.addressof()));
+        THROW_IF_FAILED(p.device->CreateRenderTargetView(target.texture.get(), nullptr, target.rtv.addressof()));
+        THROW_IF_FAILED(p.device->CreateShaderResourceView(target.texture.get(), nullptr, target.srv.addressof()));
+    };
+    create(_tfelEmission, full, DXGI_FORMAT_R32_FLOAT);
+    create(_tfelBloomA, half, DXGI_FORMAT_R16_FLOAT);
+    create(_tfelBloomB, half, DXGI_FORMAT_R16_FLOAT);
+    _tfelEmissionSize = full;
+    _tfelBloomSize = half;
+}
+
+void BackendD3D::_releaseTFELBloomTargets() noexcept
+{
+    _tfelEmission = {};
+    _tfelBloomA = {};
+    _tfelBloomB = {};
+    _tfelEmissionSize = {};
+    _tfelBloomSize = {};
 }
 
 void BackendD3D::_updateFontDependents(const RenderingPayload& p)
@@ -377,7 +545,11 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     _customShaderSamplerState.reset();
     _customShaderTexture.reset();
     _customShaderTextureView.reset();
+    _tfelRenderTargetView.reset();
+    _tfelOffscreenTexture.reset();
+    _tfelOffscreenTextureView.reset();
     _requiresContinuousRedraw = false;
+    _releaseTFELBloomTargets();
 
     if (!p.s->misc->customPixelShaderPath.empty())
     {
@@ -2408,6 +2580,100 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     // indirectly disable Present1() and its dirty rects this way.
     p.dirtyRectInPx = { 0, 0, p.s->targetSize.x, p.s->targetSize.y };
 #endif
+}
+
+void BackendD3D::_executeTFELShader(RenderingPayload& p)
+{
+    wil::com_ptr<ID3D11RasterizerState> previousRasterizer;
+    p.deviceContext->RSGetState(previousRasterizer.addressof());
+    D3D11_VIEWPORT previousViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{};
+    UINT viewportCount = std::size(previousViewports);
+    p.deviceContext->RSGetViewports(&viewportCount, previousViewports);
+    p.deviceContext->RSSetState(_tfelRasterizerState.get());
+
+    // The normal terminal frame was rendered into _tfelOffscreenTexture. Unbind
+    // it as a render target before binding it as a shader resource, then render
+    // the TFEL result into the swap-chain back buffer.
+    p.deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+
+    p.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    p.deviceContext->IASetInputLayout(nullptr);
+    p.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    ID3D11Buffer* nullVertexBuffers[2]{};
+    const UINT nullStrides[2]{};
+    const UINT nullOffsets[2]{};
+    p.deviceContext->IASetVertexBuffers(0, 2, nullVertexBuffers, nullStrides, nullOffsets);
+
+    p.deviceContext->VSSetShader(_tfelVertexShader.get(), nullptr, 0);
+    ID3D11Buffer* nullBuffer = nullptr;
+    p.deviceContext->VSSetConstantBuffers(0, 1, &nullBuffer);
+
+    p.deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+    const auto pass = [&](ID3D11RenderTargetView* output, u16x2 size, ID3D11PixelShader* shader, ID3D11ShaderResourceView* input0, ID3D11ShaderResourceView* input1, f32x4 sampling) {
+        // Unbind both inputs before selecting an output, including ping-pong A.
+        ID3D11ShaderResourceView* nullInputs[2]{};
+        p.deviceContext->PSSetShaderResources(0, 2, nullInputs);
+        p.deviceContext->OMSetRenderTargets(1, &output, nullptr);
+        D3D11_VIEWPORT viewport{};
+        viewport.Width = size.x;
+        viewport.Height = size.y;
+        viewport.MaxDepth = 1.0f;
+        p.deviceContext->RSSetViewports(1, &viewport);
+        auto constants = _tfelParameters;
+        constants.bloomSampling = sampling;
+        p.deviceContext->UpdateSubresource(_tfelConstantBuffer.get(), 0, nullptr, &constants, 0, 0);
+        p.deviceContext->PSSetConstantBuffers(0, 1, _tfelConstantBuffer.addressof());
+        p.deviceContext->PSSetShader(shader, nullptr, 0);
+        ID3D11ShaderResourceView* inputs[]{ input0, input1 };
+        p.deviceContext->PSSetShaderResources(0, 2, inputs);
+        p.deviceContext->PSSetSamplers(0, 1, _tfelSamplerState.addressof());
+        p.deviceContext->Draw(4, 0);
+    };
+    pass(_tfelEmission.rtv.get(), _tfelEmissionSize, _tfelPixelShader.get(), _tfelOffscreenTextureView.get(), nullptr, {});
+    ID3D11ShaderResourceView* bloomInput = nullptr;
+    if (_tfelParameters.bloom.x > 0.0f)
+    {
+        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, _tfelExtractShader.get(), _tfelEmission.srv.get(), nullptr, {});
+        const f32 inverseWidth = 1.0f / _tfelBloomSize.x;
+        const f32 inverseHeight = 1.0f / _tfelBloomSize.y;
+        pass(_tfelBloomB.rtv.get(), _tfelBloomSize, _tfelBlurShader.get(), _tfelBloomA.srv.get(), nullptr, { inverseWidth, inverseHeight, 1.0f, 0.0f });
+        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, _tfelBlurShader.get(), _tfelBloomB.srv.get(), nullptr, { inverseWidth, inverseHeight, 0.0f, 1.0f });
+        bloomInput = _tfelBloomA.srv.get();
+    }
+    // The composite shader uses the same intensity condition. Bind no Bloom
+    // input when disabled, so old or uninitialized halo contents cannot leak in.
+    pass(_renderTargetView.get(), _tfelEmissionSize, _tfelCompositeShader.get(), _tfelEmission.srv.get(), bloomInput, {});
+
+    // Do not leave the TFEL input SRV bound while restoring the render target.
+    // This also prevents an RTV/SRV conflict on the next frame.
+    ID3D11ShaderResourceView* const nullResources[]{ nullptr, nullptr };
+    p.deviceContext->PSSetShaderResources(0, 2, &nullResources[0]);
+    p.deviceContext->RSSetState(previousRasterizer.get());
+    p.deviceContext->RSSetViewports(viewportCount, previousViewports);
+
+    ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
+    static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
+    static constexpr UINT offsets[]{ 0, 0 };
+    p.deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+    p.deviceContext->IASetInputLayout(_inputLayout.get());
+    p.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    p.deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
+
+    p.deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
+    p.deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
+
+    ID3D11ShaderResourceView* normalResources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+    p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
+    p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
+    p.deviceContext->PSSetShaderResources(0, 2, &normalResources[0]);
+    ID3D11SamplerState* nullSampler = nullptr;
+    p.deviceContext->PSSetSamplers(0, 1, &nullSampler);
+    p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+    p.deviceContext->OMSetRenderTargets(1, _tfelRenderTargetView.addressof(), nullptr);
+
+    // The fullscreen pass changes every output pixel, even when only a subset
+    // of terminal cells was invalidated.
+    p.dirtyRectInPx = { 0, 0, p.s->targetSize.x, p.s->targetSize.y };
 }
 
 TIL_FAST_MATH_END

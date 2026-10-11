@@ -1,5 +1,24 @@
 # AI Usage Policy
 
+## terminalEL fork maintainer permission
+
+The maintainer of `HakureiRaymoo/terminalEL` explicitly authorized AI-assisted
+development and publication in this fork on 2026-10-11, with disclosure of that
+assistance. The terminalEL-specific implementation, documentation, and development
+scripts in this fork include AI-assisted work.
+
+This permission applies to this fork only; it does not authorize contributions
+to `microsoft/terminal` or other upstream projects. Their contribution policies
+continue to apply separately. Human review and verification before publication
+remain required. The current development round is local-only until the maintainer
+requests publication after review. Do not compile unless explicitly requested.
+
+The maintainer-approved Foundation v1 visual effect must remain available.
+See `doc/terminalEL-foundation-v1.md`. Do not retune its immutable preset values
+or replace its renderer algorithm when changing defaults. New visual algorithms
+require a versioned path retaining v1. Run `tools/Test-TerminalELFoundation.py`
+for the read-only baseline guard; it is not a substitute for visual validation.
+
 ## Responsibility and enforcement
 
 These rules apply to all public contributions and interactions, no matter how they're done.

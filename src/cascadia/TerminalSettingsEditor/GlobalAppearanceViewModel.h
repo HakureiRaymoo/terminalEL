@@ -6,6 +6,8 @@
 #include "GlobalAppearanceViewModel.g.h"
 #include "ViewModelHelpers.h"
 #include "Utils.h"
+#include <array>
+#include <vector>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -42,6 +44,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, MinimizeToNotificationArea);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, ShowAdminShield);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, EnableUnfocusedAcrylic);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBrightness);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELContrast);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBlackLevel);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELGamma);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorRed);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorGreen);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorBlue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBloomIntensity);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBloomThreshold);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBloomRadius);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBloomSoftness);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELColorMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELHue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELSaturation);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELGlowHue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELGlowSaturation);
+        float TFELGlowMix() const { return _GlobalSettings.TFELGlowMix(); }
+        bool HasTFELGlowMix() const { return _GlobalSettings.HasTFELGlowMix(); }
+        void TFELGlowMix(float value)
+        {
+            if (TFELGlowMix() != value)
+            {
+                _GlobalSettings.TFELGlowMix(value);
+                _NotifyChanges(L"HasTFELGlowMix", L"TFELGlowMix", L"TFELIndependentGlow");
+            }
+        }
+        bool TFELIndependentGlow() const { return TFELGlowMix() > 0.0f; }
+        void TFELIndependentGlow(bool value) { TFELGlowMix(value ? 1.0f : 0.0f); }
+        Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable> TFELPresetNames() const;
+        void ApplyTFELPreset(int32_t index);
+        int32_t CreateTFELPreset(const hstring& name);
+        hstring ExportTFELPreset(int32_t index) const;
+        int32_t ImportTFELPreset(const hstring& json, const hstring& name);
+        void RenameTFELPreset(int32_t index, const hstring& name);
+        void DeleteTFELPreset(int32_t index);
+        void UpdateTFELPreset(int32_t index);
+        hstring TFELCurrentPresetStatus() const;
 
     private:
         Model::GlobalAppSettings _GlobalSettings;
@@ -49,6 +88,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::IInspectable _currentTheme;
 
         void _UpdateThemeList();
+        struct UserTFELPreset
+        {
+            hstring name;
+            std::array<float, 16> values;
+            uint32_t storageIndex{};
+        };
+        std::vector<UserTFELPreset> _userTFELPresets;
+        void _LoadTFELPresets();
+        std::array<float, 16> _CurrentTFELValues() const;
+        hstring _ValidateTFELName(const hstring& name, int32_t excludedIndex = -1) const;
+        size_t _UserTFELIndex(int32_t index) const;
     };
 };
 

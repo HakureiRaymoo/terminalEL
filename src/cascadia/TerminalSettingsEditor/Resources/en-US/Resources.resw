@@ -2883,6 +2883,20 @@ This action is applied immediately and cannot be undone.</value>
     <value>Visual style</value>
     <comment>Title of a section that groups settings related to the terminal's visual appearance.</comment>
   </data>
+  <data name="Globals_Section_TerminalEL.Text" xml:space="preserve">
+    <value>terminalEL display</value>
+    <comment>Section containing terminalEL display model settings.</comment>
+  </data>
+  <data name="Globals_TerminalELTone.Header" xml:space="preserve"><value>Tone</value></data>
+  <data name="Globals_TerminalELBloom.Header" xml:space="preserve"><value>Bloom</value></data>
+  <data name="Globals_TFELBrightness.Header" xml:space="preserve"><value>Brightness</value></data>
+  <data name="Globals_TFELContrast.Header" xml:space="preserve"><value>Contrast</value></data>
+  <data name="Globals_TFELBlackLevel.Header" xml:space="preserve"><value>Black level</value></data>
+  <data name="Globals_TFELGamma.Header" xml:space="preserve"><value>Gamma</value></data>
+  <data name="Globals_TFELBloomIntensity.Header" xml:space="preserve"><value>Bloom intensity</value></data>
+  <data name="Globals_TFELBloomThreshold.Header" xml:space="preserve"><value>Bloom threshold</value></data>
+  <data name="Globals_TFELBloomRadius.Header" xml:space="preserve"><value>Bloom radius</value></data>
+  <data name="Globals_TFELBloomSoftness.Header" xml:space="preserve"><value>Bloom softness</value></data>
   <data name="Globals_Section_TabsLayout.Text" xml:space="preserve">
     <value>Tabs and title bar</value>
     <comment>Title of a section that groups settings related to tabs and pane layout.</comment>
@@ -2895,4 +2909,60 @@ This action is applied immediately and cannot be undone.</value>
     <value>System integration and notifications</value>
     <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
+  <data name="TFELPresetCard.Header" xml:space="preserve"><value>EL presets</value></data>
+  <data name="TFELPresetCard.Description" xml:space="preserve"><value>Status compares global parameters only; profile overrides may change the result. Selecting a preset does not apply it. Save keeps edits; Reset discards unsaved edits.</value></data>
+  <data name="TFELPresetPickerLabel.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Preset to operate on</value></data>
+  <data name="TFELPresetNameLabel.PlaceholderText" xml:space="preserve"><value>Name (optional override for import)</value></data>
+  <data name="TFELPresetNameLabel.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Preset name</value></data>
+  <data name="TFELApply.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="TFELExport.Content" xml:space="preserve"><value>Export...</value></data>
+  <data name="TFELImport.Content" xml:space="preserve"><value>Import...</value></data>
+  <data name="TFELCreate.Content" xml:space="preserve"><value>Create from current global values</value></data>
+  <data name="TFELUpdate.Content" xml:space="preserve"><value>Update selected custom preset</value></data>
+  <data name="TFELRename.Content" xml:space="preserve"><value>Rename</value></data>
+  <data name="TFELDelete.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="TFELColor.Header" xml:space="preserve"><value>EL color and scattering</value></data>
+  <data name="TFELHueCard.Header" xml:space="preserve"><value>Core hue offset (degrees)</value></data>
+  <data name="TFELSaturationCard.Header" xml:space="preserve"><value>Core saturation</value></data>
+  <data name="TFELIndependentCard.Header" xml:space="preserve"><value>Independent glow color</value></data>
+  <data name="TFELGlowHueCard.Header" xml:space="preserve"><value>Glow hue (degrees)</value></data>
+  <data name="TFELGlowSaturationCard.Header" xml:space="preserve"><value>Glow saturation</value></data>
+  <data name="TFELGlowMixCard.Header" xml:space="preserve"><value>Independent glow color mix</value></data>
+  <data name="TFELGlowMixCard.Description" xml:space="preserve"><value>Zero follows the core color; one uses the independent glow color.</value></data>
+  <data name="TFELHueInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Core hue offset (degrees)</value></data>
+  <data name="TFELSaturationInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Core saturation</value></data>
+  <data name="TFELIndependentInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Independent glow color</value></data>
+  <data name="TFELGlowHueInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Glow hue (degrees)</value></data>
+  <data name="TFELGlowSaturationInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Glow saturation</value></data>
+  <data name="TFELGlowMixInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Independent glow color mix</value></data>
+  <data name="TFELBrightnessInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Brightness</value></data>
+  <data name="TFELContrastInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Contrast</value></data>
+  <data name="TFELBlackLevelInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Black level</value></data>
+  <data name="TFELGammaInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Gamma</value></data>
+  <data name="TFELBloomIntensityInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bloom intensity</value></data>
+  <data name="TFELBloomThresholdInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bloom threshold</value></data>
+  <data name="TFELBloomRadiusInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bloom radius</value></data>
+  <data name="TFELBloomSoftnessInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bloom softness</value></data>
+  <data name="TFELStatusCustom" xml:space="preserve"><value>Global parameters: adjusted / custom</value></data>
+  <data name="TFELStatusMatches" xml:space="preserve"><value>Global parameters match: </value></data>
+  <data name="TFELCreated" xml:space="preserve"><value>Preset created from global values. Save to keep it.</value></data>
+  <data name="TFELUpdated" xml:space="preserve"><value>Selected custom preset updated from global values. Save to keep it; Reset discards unsaved edits.</value></data>
+  <data name="TFELRenamed" xml:space="preserve"><value>Preset renamed. Save to keep the change.</value></data>
+  <data name="TFELDeleted" xml:space="preserve"><value>Preset removed; current parameters are unchanged. Save to keep the change.</value></data>
+  <data name="TFELImported" xml:space="preserve"><value>Preset imported without applying it. Apply to preview; Save to keep it.</value></data>
+  <data name="TFELExported" xml:space="preserve"><value>Selected preset exported.</value></data>
+  <data name="TFELPickerError" xml:space="preserve"><value>Unable to attach the file dialog to this window.</value></data>
+  <data name="TFELFileTooLarge" xml:space="preserve"><value>Preset file exceeds 256 KiB.</value></data>
+  <data name="TFELTextTooLarge" xml:space="preserve"><value>Preset text exceeds 65536 characters.</value></data>
+  <data name="TFELFileType" xml:space="preserve"><value>EL preset</value></data>
+  <data name="TFELNameRequired" xml:space="preserve"><value>Enter a preset name.</value></data>
+  <data name="TFELNameTooLong" xml:space="preserve"><value>Preset names must be at most 80 characters.</value></data>
+  <data name="TFELNameExists" xml:space="preserve"><value>That preset name already exists.</value></data>
+  <data name="TFELInvalidLibrary" xml:space="preserve"><value>The preset library is invalid JSON. Repair terminalEL.userPresets first.</value></data>
+  <data name="TFELSelectPreset" xml:space="preserve"><value>Select a valid preset.</value></data>
+  <data name="TFELReadOnly" xml:space="preserve"><value>Built-in presets are read-only. Create a custom copy first.</value></data>
+  <data name="TFELUnsupportedVersion" xml:space="preserve"><value>Unsupported preset version or renderer.</value></data>
+  <data name="TFELMonochromeOnly" xml:space="preserve"><value>This renderer supports monochrome presets only.</value></data>
+  <data name="TFELInvalidRange" xml:space="preserve"><value>Preset parameters must be finite numbers within their supported ranges.</value></data>
+  <data name="TFELProfileInheritance.Text" xml:space="preserve"><value>Values inherit from parent profiles, then global EL settings. Each reset button clears only this profile's override. The independent glow switch and mix share one setting; resetting either restores the inherited mix. Save keeps edits.</value></data>
 </root>

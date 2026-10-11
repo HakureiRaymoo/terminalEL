@@ -4,6 +4,7 @@
 #pragma once
 #include "winrt/TerminalApp.h"
 #include "BasicPaneEvents.h"
+#include <ThrottledFunc.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -12,6 +13,7 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings,
                             winrt::Microsoft::Terminal::Settings::Model::WindowSettings windowSettings);
+        ~SettingsPaneContent();
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
@@ -35,6 +37,12 @@ namespace winrt::TerminalApp::implementation
         // See BasicPaneEvents for most generic event definitions
 
     private:
+        void _PublishTFELPreview(bool saved);
+        uint64_t _tfelSession{};
+        bool _closed{};
+        bool _tfelPending{};
+        std::shared_ptr<std::atomic_bool> _alive{ std::make_shared<std::atomic_bool>(true) };
+        std::shared_ptr<ThrottledFunc<>> _tfelUpdate;
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _sui{ nullptr };
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
     };

@@ -95,6 +95,7 @@ namespace Microsoft.Terminal.Control
                            Single compositionScale);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
+        void PreviewTFEL(Single[] values);
         void ApplyAppearance(Boolean focused);
 
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;

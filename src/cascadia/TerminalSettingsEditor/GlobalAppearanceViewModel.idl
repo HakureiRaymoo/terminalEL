@@ -36,5 +36,32 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowAdminShield);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableUnfocusedAcrylic);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBrightness);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELContrast);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBlackLevel);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELGamma);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorRed);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorGreen);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorBlue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBloomIntensity);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBloomThreshold);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBloomRadius);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBloomSoftness);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, TFELColorMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELHue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELSaturation);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELGlowHue);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELGlowSaturation);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELGlowMix);
+        Boolean TFELIndependentGlow;
+        Windows.Foundation.Collections.IObservableVector<IInspectable> TFELPresetNames { get; };
+        void ApplyTFELPreset(Int32 index);
+        Int32 CreateTFELPreset(String name);
+        String ExportTFELPreset(Int32 index);
+        Int32 ImportTFELPreset(String json, String name);
+        void RenameTFELPreset(Int32 index, String name);
+        void DeleteTFELPreset(Int32 index);
+        void UpdateTFELPreset(Int32 index);
+        String TFELCurrentPresetStatus { get; };
     }
 }

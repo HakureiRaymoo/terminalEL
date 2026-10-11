@@ -12,6 +12,7 @@
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
+#include "TFELPresets.h"
 #include "ColorSchemes.h"
 #include "EditColorScheme.h"
 #include "Profiles.h"
@@ -512,6 +513,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto breadcrumbText = profile.IsBaseLayer() ? RS_(L"Nav_ProfileDefaults/Content") : profile.Name();
         _profileViewModelChangedRevoker = profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
+            if (IsTFELPreviewProperty(settingName))
+            {
+                TFELPreviewChanged.raise(*this, false);
+            }
             if (settingName == L"CurrentPage")
             {
                 const auto currentPage = profile.CurrentPage();
@@ -659,7 +664,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == globalAppearanceTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone), *this, elementToFocus));
+                const auto appearance = winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone);
+                _tfelGlobalChangedRevoker = appearance.PropertyChanged(winrt::auto_revoke, [weak = get_weak()](auto&&, const PropertyChangedEventArgs& args) {
+                    if (IsTFELPreviewProperty(args.PropertyName()))
+                    {
+                        if (const auto self = weak.get())
+                        {
+                            self->TFELPreviewChanged.raise(*self, false);
+                        }
+                    }
+                });
+                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(appearance, *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
             }
         }
@@ -830,11 +845,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
         }
+        else
+        {
+            TFELPreviewChanged.raise(*this, true);
+        }
     }
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         UpdateSettings(_settingsSource, _windowSettingsSource);
+        TFELPreviewChanged.raise(*this, false);
     }
 
     void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)

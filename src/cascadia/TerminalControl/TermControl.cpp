@@ -831,6 +831,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
     }
 
+    void TermControl::PreviewTFEL(winrt::array_view<const float> values)
+    {
+        _core.PreviewTFEL(values);
+    }
+
     void TermControl::UpdateControlSettings(IControlSettings settings)
     {
         UpdateControlSettings(settings, _core.UnfocusedAppearance());

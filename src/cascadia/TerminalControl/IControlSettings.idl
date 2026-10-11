@@ -77,6 +77,23 @@ namespace Microsoft.Terminal.Control
 
         PathTranslationStyle PathTranslationStyle { get; };
         String DragDropDelimiter { get; };
+        Single TFELBrightness { get; };
+        Single TFELContrast { get; };
+        Single TFELBlackLevel { get; };
+        Single TFELGamma { get; };
+        Single TFELPhosphorRed { get; };
+        Single TFELPhosphorGreen { get; };
+        Single TFELPhosphorBlue { get; };
+        Single TFELBloomIntensity { get; };
+        Single TFELBloomThreshold { get; };
+        Single TFELBloomRadius { get; };
+        Single TFELBloomSoftness { get; };
+        String TFELColorMode { get; };
+        Single TFELHue { get; };
+        Single TFELSaturation { get; };
+        Single TFELGlowHue { get; };
+        Single TFELGlowSaturation { get; };
+        Single TFELGlowMix { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

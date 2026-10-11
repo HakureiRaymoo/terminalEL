@@ -27,7 +27,25 @@ Author(s):
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                   \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                     \
+    X(float, TFELBrightness, "terminalEL.brightness", 1.0f)                                                                       \
+    X(float, TFELContrast, "terminalEL.contrast", 1.0f)                                                                           \
+    X(float, TFELBlackLevel, "terminalEL.blackLevel", 0.0f)                                                                       \
+    X(float, TFELGamma, "terminalEL.gamma", 1.0f)                                                                                 \
+    X(float, TFELPhosphorRed, "terminalEL.phosphorRed", 1.0f)                                                                     \
+    X(float, TFELPhosphorGreen, "terminalEL.phosphorGreen", 0.82f)                                                               \
+    X(float, TFELPhosphorBlue, "terminalEL.phosphorBlue", 0.04f)                                                                 \
+    X(float, TFELHue, "terminalEL.hue", 0.0f) \
+    X(float, TFELSaturation, "terminalEL.saturation", 1.0f) \
+    X(float, TFELGlowHue, "terminalEL.glowHue", 18.0f) \
+    X(float, TFELGlowSaturation, "terminalEL.glowSaturation", 1.0f) \
+    X(float, TFELGlowMix, "terminalEL.glowMix", 1.0f) \
+    X(float, TFELBloomIntensity, "terminalEL.bloomIntensity", 0.6f)                                                              \
+    X(float, TFELBloomThreshold, "terminalEL.bloomThreshold", 0.30f)                                                            \
+    X(float, TFELBloomRadius, "terminalEL.bloomRadius", 8.0f)                                                                    \
+    X(float, TFELBloomSoftness, "terminalEL.bloomSoftness", 0.10f)                                                               \
+    X(hstring, TFELUserPresets, "terminalEL.userPresets", L"[]") \
+    X(hstring, TFELColorMode, "terminalEL.colorMode", L"monochrome")
 
 // Settings that are per-window (may vary by window name in the future)
 #define MTSM_WINDOW_SETTINGS(X)                                                                                                                                                                       \
@@ -120,7 +138,24 @@ Author(s):
     X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
+    X(float, TFELBrightness, "terminalEL.brightness")                                                                                                             \
+    X(float, TFELContrast, "terminalEL.contrast")                                                                                                                 \
+    X(float, TFELBlackLevel, "terminalEL.blackLevel")                                                                                                             \
+    X(float, TFELGamma, "terminalEL.gamma")                                                                                                                       \
+    X(float, TFELPhosphorRed, "terminalEL.phosphorRed")                                                                                                           \
+    X(float, TFELPhosphorGreen, "terminalEL.phosphorGreen")                                                                                                       \
+    X(float, TFELPhosphorBlue, "terminalEL.phosphorBlue")                                                                                                         \
+    X(float, TFELBloomIntensity, "terminalEL.bloomIntensity")                                                                                                    \
+    X(float, TFELBloomThreshold, "terminalEL.bloomThreshold")                                                                                                    \
+    X(float, TFELBloomRadius, "terminalEL.bloomRadius")                                                                                                          \
+    X(float, TFELBloomSoftness, "terminalEL.bloomSoftness")                                                                                                      \
+    X(float, TFELHue, "terminalEL.hue") \
+    X(float, TFELSaturation, "terminalEL.saturation") \
+    X(float, TFELGlowHue, "terminalEL.glowHue") \
+    X(float, TFELGlowSaturation, "terminalEL.glowSaturation") \
+    X(float, TFELGlowMix, "terminalEL.glowMix") \
+    X(hstring, TFELColorMode, "terminalEL.colorMode")
 
 // Intentionally omitted Profile settings:
 // * Name

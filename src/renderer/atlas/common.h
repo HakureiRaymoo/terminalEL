@@ -401,12 +401,36 @@ namespace Microsoft::Console::Render::Atlas
         bool useRetroTerminalEffect = false;
     };
 
+    struct TFELSettings
+    {
+        // x = brightness, y = contrast, z = black level, w = gamma exponent.
+        f32x4 tone{ 1.0f, 1.0f, 0.0f, 1.0f };
+        // xyz = phosphor RGB, w = reserved.
+        f32x4 phosphorColor{ 1.0f, 0.82f, 0.04f, 0.0f };
+        // x = intensity, y = threshold, z = radius in full-resolution pixels,
+        // w = soft-threshold knee.
+        f32x4 bloom{ 0.6f, 0.30f, 8.0f, 0.10f };
+        // Core hue offset (degrees), saturation multiplier; absolute glow hue,
+        // glow saturation. Resolve RGB on settings changes, not per pixel.
+        f32x4 color{ 0.0f, 1.0f, 18.0f, 1.0f };
+        // Independent glow mix: 0 follows the core, 1 uses the glow color.
+        f32x4 glow{ 1.0f, 0.0f, 0.0f, 0.0f };
+    };
+
+    static_assert(sizeof(TFELSettings) == 80);
+    static_assert(offsetof(TFELSettings, tone) == 0);
+    static_assert(offsetof(TFELSettings, phosphorColor) == 16);
+    static_assert(offsetof(TFELSettings, bloom) == 32);
+    static_assert(offsetof(TFELSettings, color) == 48);
+    static_assert(offsetof(TFELSettings, glow) == 64);
+
     struct Settings
     {
         til::generational<TargetSettings> target;
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
+        til::generational<TFELSettings> tfel;
         // Size of the viewport / swap chain in pixel.
         u16x2 targetSize{ 0, 0 };
         // Size of the portion of the text buffer that we're drawing on the screen.
@@ -423,6 +447,7 @@ namespace Microsoft::Console::Render::Atlas
             til::generational<FontSettings>{ til::generation_t{ 1 } },
             til::generational<CursorSettings>{ til::generation_t{ 1 } },
             til::generational<MiscellaneousSettings>{ til::generation_t{ 1 } },
+            til::generational<TFELSettings>{ til::generation_t{ 1 } },
         };
     }
 

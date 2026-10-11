@@ -5,6 +5,9 @@
 #include "GlobalAppearanceViewModel.h"
 #include "GlobalAppearanceViewModel.g.cpp"
 #include "EnumEntry.h"
+#include "TFELPresets.h"
+#include <winrt/Windows.Data.Json.h>
+#include <cmath>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -16,6 +19,266 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     constexpr std::wstring_view systemThemeName{ L"system" };
+    static void validateTFELPresetValues(const std::array<float, 16>& values)
+    {
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            if (!IsValidTFELPresetValue(i, values[i]))
+                throw hresult_invalid_argument(RS_(L"TFELInvalidRange"));
+        }
+    }
+
+    static std::array<float, 16> readTFELPresetValues(const Windows::Data::Json::JsonObject& settings)
+    {
+        if (settings.GetNamedString(L"terminalEL.colorMode") != L"monochrome")
+            throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        std::array<float, 16> values;
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            const auto value = settings.GetNamedNumber(hstring{ TFELPresetKeys[i] });
+            if (!IsValidTFELPresetValue(i, value))
+                throw hresult_invalid_argument(RS_(L"TFELInvalidRange"));
+            values[i] = static_cast<float>(value);
+        }
+        return values;
+    }
+
+    static Windows::Data::Json::JsonObject serializeTFELPreset(const hstring& name, const std::array<float, 16>& values)
+    {
+        using namespace Windows::Data::Json;
+        validateTFELPresetValues(values);
+        JsonObject settings;
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            settings.Insert(hstring{ TFELPresetKeys[i] }, JsonValue::CreateNumberValue(values[i]));
+        }
+        settings.Insert(L"terminalEL.colorMode", JsonValue::CreateStringValue(L"monochrome"));
+        JsonObject result;
+        result.Insert(L"version", JsonValue::CreateNumberValue(1));
+        result.Insert(L"renderer", JsonValue::CreateStringValue(L"tfel-v1"));
+        result.Insert(L"name", JsonValue::CreateStringValue(name));
+        result.Insert(L"settings", settings);
+        return result;
+    }
+
+    void GlobalAppearanceViewModel::_LoadTFELPresets()
+    {
+        using namespace Windows::Data::Json;
+        _userTFELPresets.clear();
+        JsonArray presets;
+        if (!JsonArray::TryParse(_GlobalSettings.TFELUserPresets(), presets))
+        {
+            return;
+        }
+        for (uint32_t storageIndex = 0; storageIndex < presets.Size(); ++storageIndex)
+        {
+            try
+            {
+                const auto obj = presets.GetAt(storageIndex).GetObject();
+                if (obj.GetNamedNumber(L"version") != 1 || obj.GetNamedString(L"renderer") != L"tfel-v1") continue;
+                UserTFELPreset preset{ obj.GetNamedString(L"name"), {}, storageIndex };
+                if (preset.name.empty()) continue;
+                preset.values = readTFELPresetValues(obj.GetNamedObject(L"settings"));
+                _userTFELPresets.push_back(std::move(preset));
+            }
+            CATCH_LOG();
+        }
+    }
+
+    hstring GlobalAppearanceViewModel::_ValidateTFELName(const hstring& name, int32_t excludedIndex) const
+    {
+        std::wstring trimmed{ name };
+        const auto start = trimmed.find_first_not_of(L" \t\r\n");
+        if (start == std::wstring::npos) throw hresult_invalid_argument(RS_(L"TFELNameRequired"));
+        trimmed = trimmed.substr(start, trimmed.find_last_not_of(L" \t\r\n") - start + 1);
+        if (trimmed.size() > 80) throw hresult_invalid_argument(RS_(L"TFELNameTooLong"));
+        const hstring cleanName{ trimmed };
+        for (const auto& preset : TFELBuiltinPresets)
+        {
+            if (til::compare_linguistic_insensitive(cleanName, hstring{ preset.name }) == 0) throw hresult_invalid_argument(RS_(L"TFELNameExists"));
+        }
+        for (size_t i = 0; i < _userTFELPresets.size(); ++i)
+        {
+            if (static_cast<int32_t>(i + TFELBuiltinPresets.size()) == excludedIndex) continue;
+            const auto& preset = _userTFELPresets[i];
+            if (til::compare_linguistic_insensitive(cleanName, preset.name) == 0) throw hresult_invalid_argument(RS_(L"TFELNameExists"));
+        }
+        return cleanName;
+    }
+
+    int32_t GlobalAppearanceViewModel::CreateTFELPreset(const hstring& name)
+    {
+        using namespace Windows::Data::Json;
+        const auto cleanName = _ValidateTFELName(name);
+        const auto values = _CurrentTFELValues();
+        validateTFELPresetValues(values);
+        if (TFELColorMode() != L"monochrome") throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        // Append to the original array so unknown future versions are preserved.
+        JsonArray presets;
+        if (!JsonArray::TryParse(_GlobalSettings.TFELUserPresets(), presets))
+            throw hresult_invalid_argument(RS_(L"TFELInvalidLibrary"));
+        presets.Append(serializeTFELPreset(cleanName, values));
+        _GlobalSettings.TFELUserPresets(presets.Stringify());
+        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1 });
+        _NotifyChanges(L"TFELCurrentPresetStatus");
+        return static_cast<int32_t>(TFELBuiltinPresets.size() + _userTFELPresets.size() - 1);
+    }
+
+    hstring GlobalAppearanceViewModel::ExportTFELPreset(int32_t index) const
+    {
+        if (index < 0) throw hresult_invalid_argument(RS_(L"TFELSelectPreset"));
+        const auto i = static_cast<size_t>(index);
+        if (i < TFELBuiltinPresets.size())
+        {
+            const auto& preset = TFELBuiltinPresets[i];
+            return serializeTFELPreset(hstring{ preset.name }, preset.values).Stringify();
+        }
+        if (i - TFELBuiltinPresets.size() >= _userTFELPresets.size()) throw hresult_invalid_argument();
+        const auto& preset = _userTFELPresets[i - TFELBuiltinPresets.size()];
+        return serializeTFELPreset(preset.name, preset.values).Stringify();
+    }
+
+    size_t GlobalAppearanceViewModel::_UserTFELIndex(int32_t index) const
+    {
+        if (index < static_cast<int32_t>(TFELBuiltinPresets.size()))
+            throw hresult_invalid_argument(RS_(L"TFELReadOnly"));
+        const auto i = static_cast<size_t>(index) - TFELBuiltinPresets.size();
+        if (i >= _userTFELPresets.size()) throw hresult_invalid_argument(RS_(L"TFELSelectPreset"));
+        return i;
+    }
+
+    void GlobalAppearanceViewModel::RenameTFELPreset(int32_t index, const hstring& name)
+    {
+        using namespace Windows::Data::Json;
+        const auto i = _UserTFELIndex(index);
+        const auto cleanName = _ValidateTFELName(name, index);
+        auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
+        const auto obj = presets.GetAt(_userTFELPresets[i].storageIndex).GetObject();
+        obj.Insert(L"name", JsonValue::CreateStringValue(cleanName));
+        _GlobalSettings.TFELUserPresets(presets.Stringify());
+        _userTFELPresets[i].name = cleanName;
+        _NotifyChanges(L"TFELCurrentPresetStatus");
+    }
+
+    void GlobalAppearanceViewModel::DeleteTFELPreset(int32_t index)
+    {
+        using namespace Windows::Data::Json;
+        const auto i = _UserTFELIndex(index);
+        auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
+        presets.RemoveAt(_userTFELPresets[i].storageIndex);
+        _GlobalSettings.TFELUserPresets(presets.Stringify());
+        _LoadTFELPresets();
+        _NotifyChanges(L"TFELCurrentPresetStatus");
+    }
+
+    std::array<float, 16> GlobalAppearanceViewModel::_CurrentTFELValues() const
+    {
+        return { TFELBrightness(), TFELContrast(), TFELBlackLevel(), TFELGamma(),
+                 TFELBloomIntensity(), TFELBloomThreshold(), TFELBloomRadius(), TFELBloomSoftness(),
+                 TFELPhosphorRed(), TFELPhosphorGreen(), TFELPhosphorBlue(), TFELHue(), TFELSaturation(),
+                 TFELGlowHue(), TFELGlowSaturation(), TFELGlowMix() };
+    }
+
+    hstring GlobalAppearanceViewModel::TFELCurrentPresetStatus() const
+    {
+        const auto values = _CurrentTFELValues();
+        const auto matches = [&](const auto& preset) {
+            for (size_t i = 0; i < values.size(); ++i)
+            {
+                if (!std::isfinite(values[i]) || std::abs(values[i] - preset.values[i]) > 0.00001f) return false;
+            }
+            return TFELColorMode() == L"monochrome";
+        };
+        std::wstring names;
+        const auto append = [&](const std::wstring_view name) {
+            if (!names.empty()) names += L" / ";
+            names += name;
+        };
+        for (const auto& preset : TFELBuiltinPresets) if (matches(preset)) append(preset.name);
+        for (const auto& preset : _userTFELPresets) if (matches(preset)) append(preset.name);
+        if (names.empty()) return RS_(L"TFELStatusCustom");
+        return hstring{ std::wstring{ RS_(L"TFELStatusMatches") } + names };
+    }
+
+    void GlobalAppearanceViewModel::UpdateTFELPreset(int32_t index)
+    {
+        using namespace Windows::Data::Json;
+        const auto i = _UserTFELIndex(index);
+        const auto values = _CurrentTFELValues();
+        validateTFELPresetValues(values);
+        if (TFELColorMode() != L"monochrome") throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
+        const auto obj = presets.GetAt(_userTFELPresets[i].storageIndex).GetObject();
+        const auto settings = obj.GetNamedObject(L"settings");
+        // Update only known parameters, retaining unknown metadata and array entries.
+        for (size_t n = 0; n < values.size(); ++n)
+            settings.Insert(hstring{ TFELPresetKeys[n] }, JsonValue::CreateNumberValue(values[n]));
+        _GlobalSettings.TFELUserPresets(presets.Stringify());
+        _userTFELPresets[i].values = values;
+        _NotifyChanges(L"TFELCurrentPresetStatus");
+    }
+
+    int32_t GlobalAppearanceViewModel::ImportTFELPreset(const hstring& json, const hstring& name)
+    {
+        using namespace Windows::Data::Json;
+        if (json.size() > 65536) throw hresult_invalid_argument(RS_(L"TFELTextTooLarge"));
+        const auto obj = JsonObject::Parse(json);
+        if (obj.GetNamedNumber(L"version") != 1 || obj.GetNamedString(L"renderer") != L"tfel-v1")
+            throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
+        const auto cleanName = _ValidateTFELName(name.empty() ? obj.GetNamedString(L"name") : name);
+        const auto values = readTFELPresetValues(obj.GetNamedObject(L"settings"));
+        // Validate completely before touching the library or current effect.
+        auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
+        presets.Append(serializeTFELPreset(cleanName, values));
+        _GlobalSettings.TFELUserPresets(presets.Stringify());
+        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1 });
+        _NotifyChanges(L"TFELCurrentPresetStatus");
+        return static_cast<int32_t>(TFELBuiltinPresets.size() + _userTFELPresets.size() - 1);
+    }
+
+    IObservableVector<Windows::Foundation::IInspectable> GlobalAppearanceViewModel::TFELPresetNames() const
+    {
+        // XAML ItemsSource consumes an object/bindable collection. A C++/WinRT
+        // vector<hstring> does not provide the object-vector projection.
+        auto names = single_threaded_observable_vector<Windows::Foundation::IInspectable>();
+        for (const auto& preset : TFELBuiltinPresets)
+        {
+            names.Append(box_value(hstring{ preset.name }));
+        }
+        for (const auto& preset : _userTFELPresets)
+        {
+            names.Append(box_value(preset.name));
+        }
+        return names;
+    }
+
+    void GlobalAppearanceViewModel::ApplyTFELPreset(int32_t index)
+    {
+        if (index < 0 || static_cast<size_t>(index) >= TFELBuiltinPresets.size() + _userTFELPresets.size())
+        {
+            return;
+        }
+        const auto i = static_cast<size_t>(index);
+        const auto& v = i < TFELBuiltinPresets.size() ? TFELBuiltinPresets[i].values : _userTFELPresets[i - TFELBuiltinPresets.size()].values;
+        TFELBrightness(v[0]);
+        TFELContrast(v[1]);
+        TFELBlackLevel(v[2]);
+        TFELGamma(v[3]);
+        TFELBloomIntensity(v[4]);
+        TFELBloomThreshold(v[5]);
+        TFELBloomRadius(v[6]);
+        TFELBloomSoftness(v[7]);
+        TFELPhosphorRed(v[8]);
+        TFELPhosphorGreen(v[9]);
+        TFELPhosphorBlue(v[10]);
+        TFELHue(v[11]);
+        TFELSaturation(v[12]);
+        TFELGlowHue(v[13]);
+        TFELGlowSaturation(v[14]);
+        TFELGlowMix(v[15]);
+        TFELColorMode(L"monochrome");
+    }
+
     constexpr std::wstring_view darkThemeName{ L"dark" };
     constexpr std::wstring_view lightThemeName{ L"light" };
     constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
@@ -30,6 +293,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(NewTabPosition, NewTabPosition, NewTabPosition, L"Globals_NewTabPosition", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
         _UpdateThemeList();
+        _LoadTFELPresets();
+        // Owned by this VM; no external subscription or strong self capture.
+        PropertyChanged([this](const auto&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+            const auto propertyName = args.PropertyName();
+            const std::wstring_view name{ propertyName };
+            if (name.substr(0, 4) == L"TFEL" && name != L"TFELCurrentPresetStatus")
+                _NotifyChanges(L"TFELCurrentPresetStatus");
+        });
     }
 
     // Function Description:
