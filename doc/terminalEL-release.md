@@ -1,8 +1,28 @@
 # terminalEL 首版交付流程（草稿）
 
-更新于 2026-10-15。本文为本地发布准备，尚未创建发布包或发布。
+更新于 2026-10-15。v0.1.0 作为首个发行版本，已完成本地安装包基础冒烟测试。
+远端上传由维护者执行，以 GitHub Releases 实际资产为准。
 terminalEL 是 Windows Terminal 的独立 fork；本 fork 的实现、文档和开发
 脚本包含经维护者授权的 AI 辅助工作。上游许可证与第三方声明继续适用。
+
+## v0.1.0 本地安装包结果（更新）
+
+已按维护者指令完成 Release/x64 构建及 Inno Setup EXE 制作；本文下方早期
+便携 ZIP 提案保留作历史参考，当前交付格式为按用户安装的 EXE。
+
+- 编译器：官方 Inno Setup 6.7.3，安装于 `D:\Dev\sometools\InnoSetup6`；
+  下载文件 Authenticode 签名有效，发布者 Pyrsys B.V.。
+- 入口脚本：`tools/Package-TerminalEL.ps1`；安装定义：`tools/TerminalEL-Setup.iss`。
+- 产物：`bin/terminalEL-release/0.1.0/TerminalEL-0.1.0-windows-x64-setup.exe`，
+  同目录 `SHA256SUMS.txt` 记录校验值。
+- 默认安装目录：`%LOCALAPPDATA%\Programs\TerminalEL`，以 `.portable` 隔离配置。
+- 当前用户 App Paths 注册 `wtel.exe`，Win+R 输入 `wtel` 启动；不修改 PATH 或 `wt`。
+- 本机静默安装成功；通过 ShellExecute 启动 `wtel.exe -w new` 后，进程来自
+  实际安装目录、窗口响应正常并显示 PowerShell，独立 settings.json 已生成。
+- 尚未在干净机器验证依赖、手动 Win+R、卸载/升级保留行为或安装后 IME 完整矩阵。
+  安装包未代码签名，Windows 可能显示未知发布者。
+- 正式产物须在 README/安装源码提交后重新打包，包内 build 元数据应为
+  `sourceModified=false`，并记录与 v0.1.0 标签一致的源码提交。
 
 ## 当前状态与待定项
 

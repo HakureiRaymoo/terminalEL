@@ -2,6 +2,28 @@
 
 ## Next goal (maintainer approved)
 
+### v0.1.0 publication authorized; maintainer performs remote operations
+
+Maintainer authorizes committing installer/README and preparing official release
+assets. Commit sources first, package from clean worktree, and create local v0.1.0
+tag on that commit. Provide git push and gh release create commands; do not push
+or upload from the agent. Experimental panel remains default-off and documented.
+
+### v0.1.0 EXE installer built and locally smoke-tested
+
+Maintainer requested README introduction and first installer, authorized official
+tool download under D:\Dev\sometools, and requested Win+R `wtel` entry. Release/x64
+build succeeded (logs obj/terminalEL-build-logs/20261015-193053-093). Official Inno
+Setup 6.7.3 installed in its own InnoSetup6 folder; download signature validated.
+Package-TerminalEL.ps1 stages runtime excluding settings/cache/debug outputs;
+TerminalEL-Setup.iss creates per-user installation, start-menu/uninstall entries,
+portable settings and HKCU App Paths wtel.exe. No PATH change or upstream alias.
+EXE produced in bin/terminalEL-release/0.1.0 with SHA256SUMS.txt. Local installation
+and ShellExecute wtel.exe -w new succeeded; responsive PowerShell window from the
+installed path and isolated settings.json confirmed. Installer is unsigned; clean
+machine, manual Run dialog, upgrade/uninstall and IME GUI retests remain pending.
+No git commit/push or GitHub release performed. SourceModified metadata is true.
+
 ### Maintainer-approved IME branch snapshot
 
 Maintainer confirms the current version is basically usable and authorizes a new

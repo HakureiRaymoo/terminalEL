@@ -4,6 +4,32 @@
 
 # terminalEL — 终端输入法适配分支 / Terminal IME adaptation
 
+**让终端文字具有清晰、温暖的电致发光质感。**
+
+TerminalEL 是基于 [Windows Terminal](https://github.com/microsoft/terminal) 的实验性 fork，
+受到薄膜电致发光显示屏（TFEL）视觉风格启发。在保留标签页、分屏和命令行使用方式的
+基础上，加入集成式文字辉光、多种色彩模式，以及与终端协调的中文输入法候选界面。
+目标是明亮清晰的文字核心、较暗且连续的外围光晕，同时兼顾代码辨色与日常阅读。
+
+### 相比 Windows Terminal 新增的功能
+
+- **EL 显示管线**：原生 Atlas / Direct3D 11 后处理中进行色调处理、发光提取、
+  模糊和核心保护合成；亮度、对比度、黑位、Gamma 与 Bloom 均可调。
+- **独立核心与辉光色**：支持核心 RGB、色相和饱和度，以及辉光色相、饱和度、混合比例。
+- **四种色彩模式**：Monochrome 统一着色；Native 保留源色；Native-tinted 调整辉光色；
+  Native-hybrid 将中性色映射为单色核心/独立光晕，同时保留明显彩色内容。
+- **外观管理**：全局/Profile 继承、逐项 Reset、精确输入、同进程实时预览及自定义预设
+  新建/更新/重命名/删除/导入/导出。保留 Foundation v1 冻结算法与内置预设。
+- **终端风格输入法候选框**：字体、字重、字号与终端协调，支持单色核心与字形光晕、
+  空心选中框、键盘/鼠标选词、窗格内定位与系统 UI 回退。
+- **配色与校准工具**：提供 EL Amber Code 配色示例、ANSI/True Color/代码测试图、
+  黑白阶与细字校准样本，以及默认关闭的 panel-v1 静态面板网格。
+
+Windows Terminal 已有配色、透明度及自定义着色器能力；本项目新增的是这套具体的
+EL 算法、设置、预设和输入法视觉适配。Native-hybrid 根据像素颜色分类，并不识别
+文字语义；灰色背景与低饱和度内容也可能被映射。面板网格仍需专项运行验收，
+图表是目视辅助，不是 ICC/HDR 或仪器级校准。时间余辉不在当前实现范围内。
+
 本分支 `feature/terminal-ime-adaptation` 保存已由维护者确认基本可用的输入法适配版本。
 基于 Windows Terminal，为 TSF 候选列表提供 terminalEL 风格界面，支持键盘/鼠标选词、
 系统 UI 回退、Profile 设置继承，以及与终端协调的字号、字重、单色核心色和字形辉光。
@@ -27,7 +53,8 @@ AI-assisted development applies to this fork; upstream licenses and notices rema
 
 ### 当前状态
 
-这是 **基本可用、持续调整中的源码分支版本**，尚未制作安装包或正式发行版。
+这是 **基本可用、持续调整中的分支版本**，首个发行版本为 **v0.1.0 x64 EXE 安装包**。
+发行文件以本仓库 Releases 中实际提供的资产为准。已完成本机基础安装与启动验证。
 维护者已在本机使用微软拼音，对候选显示、输入响应、设置继承、鼠标选词、
 字号/字重、颜色及辉光进行了迭代验证。其他输入法、跨显示器 DPI 和特殊布局
 的兼容范围以实际测试为准，详细验收表保留尚未逐项记录的状态。
@@ -93,6 +120,27 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-TerminalEL.ps1 -Conf
 非打包运行默认使用 `%LOCALAPPDATA%\Microsoft\Windows Terminal` 配置。
 若需独立配置，可在输出目录的 `Microsoft.Terminal.Settings.Model.dll` 旁创建空文件
 `.portable`；新进程会使用同级 `settings` 目录。该目录需要可写，切换前请保留配置备份。
+
+### v0.1.0 安装包与 `wtel` 入口
+
+首版安装器按当前用户安装到 `%LOCALAPPDATA%\Programs\TerminalEL`，提供开始菜单
+快捷方式和卸载入口。安装后按 **Win+R**，输入 **`wtel`** 即可打开 TerminalEL。
+该入口通过当前用户的 App Paths 注册，不替换 Windows Terminal 的 `wt`，也不修改 PATH；
+它用于 Windows 运行对话框/ShellExecute，不承诺在 cmd/PowerShell 内作为命令使用。
+
+安装目录包含 `.portable` 标记，配置保存在其 `settings` 子目录。升级保留配置，卸载也
+保留用户配置。安装器版本为 0.1.0，程序内部仍可能显示上游构建版本，包内
+`terminalEL-build.json` 记录实际版本与源码状态。首版未使用代码签名证书，Windows
+可能显示“未知发布者”。
+
+完成 Release 构建后，使用官方 Inno Setup 编译器打包：
+
+```powershell
+pwsh -NoProfile -File .\tools\Package-TerminalEL.ps1 -Compiler 'D:\Dev\sometools\InnoSetup6\ISCC.exe'
+```
+
+安装器与 SHA-256 校验文件输出到 `bin\terminalEL-release\0.1.0`。
+该脚本不编译主程序、不安装产物，也不复制开发机用户配置。
 
 ### 非编译检查
 

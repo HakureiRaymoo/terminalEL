@@ -1,6 +1,9 @@
-# terminalEL 首版发布说明（草稿，尚未发布）
+# TerminalEL v0.1.0 — EL 显示与终端输入法适配
 
-版本号、交付格式和发布日期待维护者确定。
+首个发行版本，提供 Windows x64 EXE 安装器与 SHA-256 校验文件。
+安装后按 Win+R 输入 `wtel` 打开程序。安装器按当前用户安装，提供开始菜单
+与卸载入口；不修改原版 `wt`。配置位于安装目录的 `settings`，升级/卸载保留。
+安装器尚未代码签名，Windows 可能提示未知发布者。
 
 terminalEL 是基于 Windows Terminal 的终端显示实验 fork，提供可调的 EL 风格
 文字核心和辉光，同时保留原有终端使用方式。本 fork 的实现、文档和开发脚本
@@ -15,7 +18,7 @@ terminalEL 是基于 Windows Terminal 的终端显示实验 fork，提供可调�
   鼠标选词及系统 UI 回退。候选框与字形辉光可单独开启。
 - 配色与校准图表工具，便于对照灰阶、代码色彩和细字可读性。
 
-panel-v1 可选网格已有实现，是否纳入首版待运行验收后确定。
+包含实验性 panel-v1 静态网格，默认关闭；专项 GPU/DPI 验收范围有限。
 
 ## 候选框使用
 
@@ -40,10 +43,15 @@ Profile 设置可覆盖全局，Reset 恢复继承。环境变量 `TERMINALEL_IM
   并非逐像素一致；高对比度模式会关闭候选装饰辉光。
 - 设置预览限同一进程。多编辑器预览采用最新的完整快照。
 - 时间余辉不在当前实现范围内。
-- 安装前提、包内版本和首版包含的可选功能须在实际包验收后补全。
+- 面向 Windows 10 2004（19041）或更高版本的 x64 环境。已完成本机 Release
+  构建、安装及启动验证；尚未完成干净机器依赖验证，缺失运行库时可能需要
+  Microsoft Visual C++ x64 Redistributable。
+- 发行/安装器版本为 0.1.0，程序内部保留上游构建版本；包内
+  `terminalEL-build.json` 记录源码提交与实际 EXE 版本。
 
 ## 安装与升级
 
-最终格式未定。若采用便携 ZIP：解压到可写目录，从包内 WindowsTerminal.exe
-启动，配置保存在包旁的 settings 目录。升级前备份该目录；不要把旧版 EXE/DLL
-混入新包。便携包不自动注册为默认终端，也不自动更新。
+运行 `TerminalEL-0.1.0-windows-x64-setup.exe`，默认安装到
+`%LOCALAPPDATA%\Programs\TerminalEL`。升级前备份 settings 目录。
+首版不自动注册为默认终端，也不自动更新。`wtel` 通过用户 App Paths 支持
+运行对话框启动，不修改 PATH，不承诺作为命令行命令使用。
