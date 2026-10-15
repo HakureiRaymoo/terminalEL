@@ -25,11 +25,100 @@ Candidate glyph glow uses Composition and is not pixel-identical to terminal sha
 本 fork 的实现、文档和开发脚本包含经维护者授权的 AI 辅助工作。
 AI-assisted development applies to this fork; upstream licenses and notices remain.
 
+### 当前状态
+
+这是 **基本可用、持续调整中的源码分支版本**，尚未制作安装包或正式发行版。
+维护者已在本机使用微软拼音，对候选显示、输入响应、设置继承、鼠标选词、
+字号/字重、颜色及辉光进行了迭代验证。其他输入法、跨显示器 DPI 和特殊布局
+的兼容范围以实际测试为准，详细验收表保留尚未逐项记录的状态。
+
+| 模块 | 当前方案 |
+| --- | --- |
+| Foundation v1 | 保留冻结的单色渲染算法和预设，可恢复原有效果 |
+| Native 色彩 | 包含 native、native-tinted、native-hybrid 路径及 Tone/Bloom 设置 |
+| 输入法候选 | 默认关闭的窗格内浮层，使用 TSF 候选数据与提交接口 |
+| 外观设置 | 全局默认、Profile 覆盖、继承 Reset；候选柔光独立开关 |
+| 面板与校准 | 包含默认关闭的 panel-v1 网格和校准图表；仍需专项运行验收 |
+
+### 构造方案：TSF 数据 + XAML 候选界面 + Composition 辉光
+
+```text
+微软拼音 / TSF 候选生命周期
+    └─ src/tsf：文档归属、候选分页、选中项和有效性校验
+         └─ TermControl：窗格内 XAML 候选浮层
+              ├─ TextBlock：清晰文字、序号与页码
+              ├─ Border：空心选中框与框体柔光
+              └─ Composition：字形 AlphaMask + 近层/宽层阴影
+
+终端正文 ── Atlas / D3D 着色器 ── 核心颜色、Tone 与 Bloom
+候选界面 ── 读取有效 Profile 参数 ── 对齐字体、核心色及辉光色
+```
+
+- **输入行为**：候选仍由输入法生成；键盘分页、数字/空格确认等保留原有输入法
+  路径。鼠标选词调用 TSF `SetSelection` / `Finalize`，不把候选字符串直接写入 PTY。
+- **生命周期与性能**：校验候选所属文档和窗格，失焦/关闭时清理；16 ms 定时器
+  合并候选更新，复用行控件，空闲时不重复读取候选字符串。布局约每 100 ms 检查。
+- **字体与颜色**：读取终端实际字体名称、字重和包含缩放的字号；核心色沿用单色版
+  RGB、色相、饱和度和 Tone，辉光沿用独立辉光色与混合比例。中文回退字体和抗锯齿
+  路径仍可能与正文略有差异。
+- **辉光实现**：保留清晰文字，在后方使用字形遮罩生成近层及宽层光晕；读取 Bloom
+  参数并做 Composition 强度映射。它是视觉适配，不是终端着色器的逐像素复制。
+- **回退**：接口不支持、数据无效或窗格空间不足时请求显示系统候选 UI；
+  高对比度模式下关闭候选装饰辉光。
+
+### 本地构建与运行
+
+构建环境要求见下方上游 Prerequisites；本 fork 的便捷脚本要求 **PowerShell 7、
+VS 2026 ≥ 18.6 C++ 工具链**及对应 Windows SDK。以下命令由使用者按需执行：
+
+```powershell
+git switch feature/terminal-ime-adaptation
+
+# 在仓库根目录构建 Debug/x64，准备完整运行布局并启动
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-TerminalEL.ps1 -Run
+
+# Release/x64（不自动启动）
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-TerminalEL.ps1 -Configuration Release
+```
+
+请先关闭对应输出目录的本地实例，再从另一个终端构建。脚本不会终止进程。
+运行目录为 `bin\x64\<Debug或Release>\WindowsTerminal`，构建日志位于
+`obj\terminalEL-build-logs`。脚本会准备 WinUI DLL、合并 PRI 并放置 OpenConsole；
+仅完成普通项目 Build 不一定具备完整运行布局。
+
+构建后在“外观”中启用上方两个开关，保存后开始新的候选会话。
+`TERMINALEL_IME_OVERLAY=1/0` 是覆盖保存设置的诊断选项；正常验收设置时应移除。
+`TERMINALEL_IME_PROBE=1` 可输出 DebugView 元数据，测试输入流畅度时应关闭。
+
+非打包运行默认使用 `%LOCALAPPDATA%\Microsoft\Windows Terminal` 配置。
+若需独立配置，可在输出目录的 `Microsoft.Terminal.Settings.Model.dll` 旁创建空文件
+`.portable`；新进程会使用同级 `settings` 目录。该目录需要可写，切换前请保留配置备份。
+
+### 非编译检查
+
+```powershell
+python tools/Test-TerminalELFoundation.py
+python tools/Test-TerminalELNative.py
+python tools/Test-TerminalELUI.py
+python tools/Test-TerminalELPanel.py
+python tools/Test-TerminalELProjectGraph.py
+git diff --check
+```
+
+这些脚本验证冻结基线、设置/资源/项目引用和部分算法模型，不执行 C++/WinRT、
+XAML 或 HLSL 编译，也不代替实际 GPU、字体及输入法测试。
+
+### 详细文档
+
 - [候选框使用与实现说明](doc/terminalEL-ime-overlay.md)
 - [边界验收记录](doc/terminalEL-ime-acceptance.md)
 - [构建与交付流程](doc/terminalEL-release.md)
 
 ## Upstream Windows Terminal documentation
+
+以下保留上游 Windows Terminal 文档。Microsoft Store、winget 和上游 Releases
+安装的是上游产品，**不包含本分支的 terminalEL 输入法适配**；本分支目前按上文从源码构建。
+The upstream build badge above describes the upstream pipeline, not validation of this fork.
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
