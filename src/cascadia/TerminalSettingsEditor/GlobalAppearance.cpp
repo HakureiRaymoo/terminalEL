@@ -99,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TFEL_NUMBER(TFELContrast)
         TFEL_NUMBER(TFELBlackLevel)
         TFEL_NUMBER(TFELGamma)
+        TFEL_NUMBER(TFELPanelGrid)
         TFEL_NUMBER(TFELBloomIntensity)
         TFEL_NUMBER(TFELBloomThreshold)
         TFEL_NUMBER(TFELBloomRadius)

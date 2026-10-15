@@ -6,6 +6,7 @@
 
 #include <DefaultSettings.h>
 #include <inputpaneinterop.h>
+#include <winrt/Windows.UI.Xaml.Hosting.h>
 
 #include "TermControlAutomationPeer.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -84,7 +85,11 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 {
     // NOTE: If we ever go back to 1 thread per 1 window,
     // you need to swap the `static` with a `thread_local`.
-    static auto s_tsf = ::Microsoft::Console::TSF::Handle::Create();
+    static auto s_tsf = [] {
+        auto handle = ::Microsoft::Console::TSF::Handle::Create();
+        handle.EnableCandidateProbe();
+        return handle;
+    }();
     return s_tsf;
 }
 
@@ -255,6 +260,383 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return nullptr;
         }
         return core->GetRenderer();
+    }
+
+    bool TsfDataProvider::CandidateUIEnabled() noexcept
+    try
+    {
+        // Explicit diagnostic override; absent/invalid means use saved settings.
+        static const int overrideValue = [] {
+            wchar_t value[2]{};
+            if (GetEnvironmentVariableW(L"TERMINALEL_IME_OVERLAY", value, ARRAYSIZE(value)) == 1)
+            {
+                if (value[0] == L'1') return 1;
+                if (value[0] == L'0') return 0;
+            }
+            return -1;
+        }();
+        return overrideValue >= 0 ? overrideValue != 0 : _termControl->_core.Settings().IMECandidateOverlay();
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    bool TsfDataProvider::BeginCandidateUI()
+    {
+        const auto control = _termControl;
+        if (control->_closing || control->_detached || !control->_focused || control->SearchBoxEditInFocus() ||
+            !control->Dispatcher().HasThreadAccess() || !control->XamlRoot() ||
+            control->SwapChainPanel().ActualWidth() < 160 || control->ActualHeight() < 80)
+        {
+            return false;
+        }
+        if (!control->_candidateTimer)
+        {
+            // Padding/footer clicks and wheel gestures must not reach terminal
+            // selection, shell mouse reporting, or scroll handlers.
+            const auto border = control->CandidateBorder();
+            border.PointerPressed([](auto&&, const Input::PointerRoutedEventArgs& args) { args.Handled(true); });
+            border.PointerReleased([](auto&&, const Input::PointerRoutedEventArgs& args) { args.Handled(true); });
+            border.PointerWheelChanged([](auto&&, const Input::PointerRoutedEventArgs& args) { args.Handled(true); });
+            border.Tapped([](auto&&, const Input::TappedRoutedEventArgs& args) { args.Handled(true); });
+            border.DoubleTapped([](auto&&, const Input::DoubleTappedRoutedEventArgs& args) { args.Handled(true); });
+            border.RightTapped([](auto&&, const Input::RightTappedRoutedEventArgs& args) { args.Handled(true); });
+            control->_candidateTimer.emplace();
+            control->_candidateTimer->Interval(std::chrono::milliseconds(16));
+            control->_candidateTimer->Tick([weak = control->get_weak()](auto&&, auto&&) {
+                if (const auto self = weak.get())
+                {
+                    GetTSFHandle().RefreshCandidateUI(&self->_tsfDataProvider);
+                }
+            });
+        }
+        control->_candidateTimer->Start();
+        return true;
+    }
+
+    bool TsfDataProvider::UpdateCandidateUI(const ::Microsoft::Console::TSF::CandidatePage& page)
+    {
+        const auto control = _termControl;
+        if (control->_closing || control->_detached || !control->_focused || control->SearchBoxEditInFocus() ||
+            !control->Dispatcher().HasThreadAccess() || !control->XamlRoot()) return false;
+
+        const auto scale = control->SwapChainPanel().CompositionScaleX();
+        if (scale <= 0) return false;
+        const auto font = control->_core.FontSize();
+        const auto cursor = control->_core.CursorPosition();
+        const auto padding = control->GetPadding();
+        const auto width = control->SwapChainPanel().ActualWidth();
+        const auto height = control->SwapChainPanel().ActualHeight();
+        const auto x = padding.Left + cursor.X * font.Width / scale;
+        const auto y = padding.Top + cursor.Y * font.Height / scale;
+        const auto below = y + font.Height / scale;
+        if (width < 160 || height < 80 || x < 0 || x >= width || y < 0 || below > height) return false;
+
+        const auto appearance = control->_core.FocusedAppearance();
+        const auto settings = control->_core.Settings();
+        const bool highContrast = Windows::UI::ViewManagement::AccessibilitySettings().HighContrast();
+        // Match monochrome tfelCoreColor/tfelHsvToRgb and glow interpolation in
+        // BackendD3D. XAML uses an 8-bit color; emission/blur remains Composition.
+        const auto bounded = [](float value, float low, float high, float fallback) {
+            return std::isfinite(value) ? std::clamp(value, low, high) : fallback;
+        };
+        const auto hsv = [](float hue, float saturation, float value) {
+            hue = hue / 360.0f - std::floor(hue / 360.0f);
+            const auto channel = [&](float offset) {
+                const auto phase = hue + offset - std::floor(hue + offset);
+                const auto rgb = std::clamp(std::abs(phase * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
+                return value * (1.0f + saturation * (rgb - 1.0f));
+            };
+            return std::array<float, 3>{ channel(0), channel(2.0f / 3.0f), channel(1.0f / 3.0f) };
+        };
+        std::array<float, 3> coreColor{
+            bounded(settings.TFELPhosphorRed(), 0, 1, 1),
+            bounded(settings.TFELPhosphorGreen(), 0, 1, 0.82f),
+            bounded(settings.TFELPhosphorBlue(), 0, 1, 0.04f)
+        };
+        const auto hueShift = bounded(settings.TFELHue(), -180, 180, 0);
+        const auto saturationScale = bounded(settings.TFELSaturation(), 0, 2, 1);
+        if (hueShift != 0 || saturationScale != 1)
+        {
+            const auto high = std::max({ coreColor[0], coreColor[1], coreColor[2] });
+            const auto low = std::min({ coreColor[0], coreColor[1], coreColor[2] });
+            const auto delta = high - low;
+            float hue = 0;
+            if (delta > 0)
+            {
+                if (high == coreColor[0]) hue = (coreColor[1] - coreColor[2]) / delta;
+                else if (high == coreColor[1]) hue = (coreColor[2] - coreColor[0]) / delta + 2;
+                else hue = (coreColor[0] - coreColor[1]) / delta + 4;
+                hue *= 60;
+            }
+            const auto saturation = high > 0 ? delta / high : 0;
+            coreColor = hsv(hue + hueShift, std::clamp(saturation * saturationScale, 0.0f, 1.0f), high);
+        }
+        auto glowColor = hsv(bounded(settings.TFELGlowHue(), 0, 360, 18),
+                             bounded(settings.TFELGlowSaturation(), 0, 1, 1),
+                             std::max({ coreColor[0], coreColor[1], coreColor[2] }));
+        const auto mix = bounded(settings.TFELGlowMix(), 0, 1, 1);
+        for (size_t channel = 0; channel < 3; ++channel)
+        {
+            glowColor[channel] = coreColor[channel] + (glowColor[channel] - coreColor[channel]) * mix;
+        }
+        const auto xamlColor = [](const std::array<float, 3>& rgb) {
+            return Windows::UI::Color{ 255,
+                static_cast<uint8_t>(std::lround(std::clamp(rgb[0], 0.0f, 1.0f) * 255)),
+                static_cast<uint8_t>(std::lround(std::clamp(rgb[1], 0.0f, 1.0f) * 255)),
+                static_cast<uint8_t>(std::lround(std::clamp(rgb[2], 0.0f, 1.0f) * 255)) };
+        };
+        // Use the same full-coverage foreground luminance/Tone equation as the
+        // monochrome emission shader. Edge coverage is still supplied by XAML.
+        const auto sourceColor = til::color{ appearance.DefaultForeground() };
+        const auto luminance = (0.2126f * sourceColor.r + 0.7152f * sourceColor.g + 0.0722f * sourceColor.b) / 255.0f;
+        auto level = std::max(luminance - bounded(settings.TFELBlackLevel(), 0, 0.5f, 0), 0.0f);
+        level = (level - 0.5f) * bounded(settings.TFELContrast(), 0, 2, 1) + 0.5f;
+        level *= bounded(settings.TFELBrightness(), 0, 2, 1);
+        const auto emission = std::pow(std::clamp(level, 0.0f, 1.0f), bounded(settings.TFELGamma(), 0.5f, 2.5f, 1));
+        auto textColor = coreColor;
+        for (auto& channel : textColor) channel *= emission;
+        Media::SolidColorBrush foreground{ sourceColor };
+        if (!highContrast) foreground.Color(xamlColor(textColor));
+        const Media::SolidColorBrush glowBrush{ xamlColor(glowColor) };
+        const Media::SolidColorBrush background{ til::color{ appearance.DefaultBackground() } };
+        // Use the resolved renderer face/weight, rather than letting XAML
+        // independently resolve the requested face and inherit a UI weight.
+        const auto actualFont = _getCore()->GetFont();
+        const Media::FontFamily family{ actualFont.GetFaceName() };
+        const Windows::UI::Text::FontWeight candidateWeight{ static_cast<uint16_t>(actualFont.GetWeight()) };
+        const auto candidateFontSize = std::max(1.0, static_cast<double>(_getCore()->FontEmSizeInDips()));
+        const auto border = control->CandidateBorder();
+        const auto rows = control->CandidateRows();
+        const bool softGlow = settings.IMECandidateGlow() && !highContrast;
+        const auto oldBackground = border.Background().try_as<Media::SolidColorBrush>();
+        if (!oldBackground || oldBackground.Color() != background.Color()) border.Background(background);
+        const auto oldBorder = border.BorderBrush().try_as<Media::SolidColorBrush>();
+        if (!oldBorder || oldBorder.Color() != foreground.Color()) border.BorderBrush(foreground);
+        if (border.MaxWidth() != width - 8) border.MaxWidth(width - 8);
+        const auto& previous = control->_candidatePage;
+        const auto addText = [&](const std::wstring& value) {
+            Controls::TextBlock text;
+            text.Text(value);
+            text.FontFamily(family);
+            text.FontSize(candidateFontSize);
+            text.FontWeight(candidateWeight);
+            text.FontStyle(Windows::UI::Text::FontStyle::Normal);
+            text.IsTextScaleFactorEnabled(false);
+            text.Foreground(foreground);
+            text.TextWrapping(TextWrapping::Wrap);
+            Controls::Border row;
+            // Reserve the outline on every row so moving selection cannot
+            // change text position, page measurement or hit target geometry.
+            row.Padding({ 3, 1, 3, 1 });
+            row.BorderThickness({ 1, 1, 1, 1 });
+            row.Background(Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+            const auto rowIndex = rows.Children().Size();
+            // Border is not focusable. Snapshot the displayed page on press,
+            // then reject a release if TSF has updated in the meantime.
+            struct CandidatePress
+            {
+                uint64_t revision;
+                UINT index;
+                uint32_t pointerId;
+            };
+            const auto pressed = std::make_shared<std::optional<CandidatePress>>();
+            row.PointerPressed([weak = control->get_weak(), rowIndex, pressed](auto&&, const Input::PointerRoutedEventArgs& args) {
+                args.Handled(true);
+                pressed->reset();
+                if (const auto self = weak.get())
+                {
+                    if (args.GetCurrentPoint(self->CandidateBorder()).Properties().IsLeftButtonPressed() &&
+                        self->_candidatePage && rowIndex < self->_candidatePage->entries.size())
+                    {
+                        *pressed = CandidatePress{ self->_candidatePage->revision, self->_candidatePage->first + rowIndex, args.Pointer().PointerId() };
+                    }
+                }
+            });
+            row.PointerReleased([weak = control->get_weak(), pressed](auto&&, const Input::PointerRoutedEventArgs& args) {
+                args.Handled(true);
+                // A different pointer, or a right-button release while left is
+                // still down, must not finalize the pending left-button click.
+                if (!*pressed || (*pressed)->pointerId != args.Pointer().PointerId() ||
+                    args.GetCurrentPoint(nullptr).Properties().IsLeftButtonPressed()) return;
+                const auto selection = std::exchange(*pressed, std::nullopt);
+                if (const auto self = weak.get(); self && selection && self->_focused && !self->_closing && !self->SearchBoxEditInFocus())
+                {
+                    GetTSFHandle().SelectCandidate(&self->_tsfDataProvider, selection->revision, selection->index);
+                }
+            });
+            row.PointerExited([pressed](auto&&, auto&&) { pressed->reset(); });
+            row.PointerCanceled([pressed](auto&&, auto&&) { pressed->reset(); });
+            row.Tapped([](auto&&, const Input::TappedRoutedEventArgs& args) { args.Handled(true); });
+            row.DoubleTapped([](auto&&, const Input::DoubleTappedRoutedEventArgs& args) { args.Handled(true); });
+            Controls::Grid textLayers;
+            textLayers.Children().Append(text); // Sharp text always stays on top.
+            row.Child(textLayers);
+            rows.Children().Append(row);
+        };
+        // Reuse the visual tree even when strings or selection change. IMEs
+        // commonly update the same nine rows on every keystroke.
+        while (rows.Children().Size() > page.entries.size() + 1)
+        {
+            rows.Children().RemoveAtEnd();
+        }
+        while (rows.Children().Size() < page.entries.size() + 1) addText(L"");
+        for (uint32_t i = 0; i < rows.Children().Size(); ++i)
+        {
+            const auto row = rows.Children().GetAt(i).as<Controls::Border>();
+            const auto layers = row.Child().as<Controls::Grid>();
+            // A compositor host behind sharp text holds two blurred alpha-mask
+            // shadows. Unlike displaced text copies this produces a continuous halo.
+            if (softGlow && layers.Children().Size() == 1)
+            {
+                Controls::Grid host;
+                host.IsHitTestVisible(false);
+                const auto compositor = Hosting::ElementCompositionPreview::GetElementVisual(host).Compositor();
+                const auto container = compositor.CreateContainerVisual();
+                // The mask covers the arranged TextBlock (stretched to the row),
+                // not its intrinsic DesiredSize. The host and text share a Grid
+                // cell; track its arranged size in the compositor, including
+                // subsequent layout changes, rather than sampling pre-arrange size.
+                container.RelativeSizeAdjustment({ 1.0f, 1.0f });
+                for (int band = 0; band < 2; ++band)
+                {
+                    const auto sprite = compositor.CreateSpriteVisual();
+                    sprite.RelativeSizeAdjustment({ 1.0f, 1.0f });
+                    const auto shadow = compositor.CreateDropShadow();
+                    shadow.Offset({ 0, 0, 0 });
+                    sprite.Shadow(shadow);
+                    container.Children().InsertAtTop(sprite);
+                }
+                Hosting::ElementCompositionPreview::SetElementChildVisual(host, container);
+                layers.Children().InsertAt(0, host);
+            }
+            else if (!softGlow)
+            {
+                while (layers.Children().Size() > 1) layers.Children().RemoveAt(0);
+            }
+            const auto value = i < page.entries.size() ? std::to_wstring(i + 1) + L"  " + page.entries[i] :
+                std::to_wstring(page.page + 1) + L" / " + std::to_wstring(page.pages);
+            const auto size = candidateFontSize;
+            for (const auto layer : layers.Children())
+            {
+                const auto text = layer.try_as<Controls::TextBlock>();
+                if (!text) continue;
+                if (text.Text() != value) text.Text(value);
+                if (text.FontFamily().Source() != family.Source()) text.FontFamily(family);
+                if (text.FontSize() != size) text.FontSize(size);
+                if (text.FontWeight().Weight != candidateWeight.Weight) text.FontWeight(candidateWeight);
+                const auto oldForeground = text.Foreground().try_as<Media::SolidColorBrush>();
+                if (!oldForeground || oldForeground.Color() != foreground.Color()) text.Foreground(foreground);
+            }
+            if (i == page.selection)
+            {
+                const auto brush = row.BorderBrush().try_as<Media::SolidColorBrush>();
+                if (!brush || brush.Color() != foreground.Color()) row.BorderBrush(foreground);
+            }
+            else
+            {
+                const auto brush = row.BorderBrush().try_as<Media::SolidColorBrush>();
+                if (!brush || brush.Color().A != 0) row.BorderBrush(Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+            }
+        }
+        if (!previous || &page != &*previous) control->_candidatePage = page;
+        border.Visibility(Visibility::Visible);
+        border.Measure({ static_cast<float>(width - 8), std::numeric_limits<float>::infinity() });
+        const auto desired = border.DesiredSize();
+        if (softGlow)
+        {
+            // Keep the broader glyph halo within the candidate body, especially
+            // when the window touches a split-pane edge.
+            Media::RectangleGeometry clip;
+            clip.Rect({ 0, 0, desired.Width, desired.Height });
+            border.Clip(clip);
+            // Match the monochrome extraction soft knee and peak envelope for
+            // full-coverage text. Composition cannot reproduce per-pixel core
+            // protection/additive blending, so use a restrained two-band proxy.
+            const auto intensity = bounded(settings.TFELBloomIntensity(), 0, 2, 0.6f);
+            const auto radius = bounded(settings.TFELBloomRadius(), 0, 16, 8) / scale;
+            const auto threshold = bounded(settings.TFELBloomThreshold(), 0.0001f, 1, 0.30f);
+            const auto knee = std::min(bounded(settings.TFELBloomSoftness(), 0, 0.5f, 0.10f), threshold * 0.999f);
+            auto soft = std::clamp(emission - threshold + knee, 0.0f, 2.0f * knee);
+            soft = soft * soft / std::max(4.0f * knee, 0.000001f);
+            const auto extracted = std::max(emission - threshold, soft);
+            const auto lifted = 3.0f * std::sqrt(intensity * extracted);
+            const auto halo = lifted / (1.0f + lifted / 0.25f);
+            // The shader's 0.25 cap is output emission, not shadow opacity.
+            // Composition first blurs the glyph alpha, attenuating its tail;
+            // applying that cap again as opacity made the halo too faint.
+            // Normalize the envelope for alpha shadows, retaining zero output
+            // at zero intensity/extraction and a bounded response to Bloom.
+            const auto shadowGain = std::clamp(halo / 0.25f, 0.0f, 1.0f);
+            for (const auto child : rows.Children())
+            {
+                const auto layers = child.as<Controls::Border>().Child().as<Controls::Grid>();
+                const auto host = layers.Children().GetAt(0).as<Controls::Grid>();
+                const auto text = layers.Children().GetAt(1).as<Controls::TextBlock>();
+                const auto container = Hosting::ElementCompositionPreview::GetElementChildVisual(host).as<Windows::UI::Composition::ContainerVisual>();
+                const auto mask = text.GetAlphaMask();
+                int band = 0;
+                for (const auto visual : container.Children())
+                {
+                    const auto sprite = visual.as<Windows::UI::Composition::SpriteVisual>();
+                    const auto shadow = sprite.Shadow().as<Windows::UI::Composition::DropShadow>();
+                    shadow.Mask(mask);
+                    shadow.Color(glowBrush.Color());
+                    // Keep light around the glyph rather than reinforcing its
+                    // antialiased edge like an extra bold stroke. Preserve the
+                    // broad halo, but soften/reduce the tight near-band proxy.
+                    shadow.BlurRadius(radius * (band == 0 ? 0.75f : 1.20f));
+                    shadow.Opacity(shadowGain * (band == 0 ? 0.65f : 1.0f));
+                    ++band;
+                }
+            }
+        }
+        else if (border.Clip()) border.Clip(nullptr);
+        auto top = below;
+        if (top + desired.Height + 4 > height) top = y - desired.Height;
+        if (top < 0 || desired.Width > width - 8 || desired.Height > height - 8) return false;
+        const auto left = std::clamp(x, 4.0, std::max(4.0, width - desired.Width - 4));
+        Controls::Canvas::SetLeft(border, left);
+        Controls::Canvas::SetTop(border, top);
+        for (const auto band : { control->CandidateInnerGlowNear(), control->CandidateInnerGlowFar() })
+        {
+            const auto brush = band.BorderBrush().try_as<Media::SolidColorBrush>();
+            if (!brush || brush.Color() != glowBrush.Color()) band.BorderBrush(glowBrush);
+        }
+        control->CandidateInnerGlow().Visibility(softGlow ? Visibility::Visible : Visibility::Collapsed);
+        // Omit only the outer bands at pane edges; inner/glyph light stays inside.
+        const auto glow = control->CandidateGlow();
+        const bool showGlow = softGlow &&
+                              left >= 6 && top >= 6 && left + desired.Width + 6 <= width && top + desired.Height + 6 <= height;
+        if (showGlow)
+        {
+            for (const auto band : { control->CandidateGlowOuter(), control->CandidateGlowMiddle(), control->CandidateGlowInner() })
+            {
+                const auto brush = band.BorderBrush().try_as<Media::SolidColorBrush>();
+                if (!brush || brush.Color() != glowBrush.Color()) band.BorderBrush(glowBrush);
+            }
+            if (glow.Width() != desired.Width + 12) glow.Width(desired.Width + 12);
+            if (glow.Height() != desired.Height + 12) glow.Height(desired.Height + 12);
+            Controls::Canvas::SetLeft(glow, left - 6);
+            Controls::Canvas::SetTop(glow, top - 6);
+        }
+        glow.Visibility(showGlow ? Visibility::Visible : Visibility::Collapsed);
+        return true;
+    }
+
+    bool TsfDataProvider::RefreshCandidateLayout()
+    {
+        return _termControl->_candidatePage && UpdateCandidateUI(*_termControl->_candidatePage);
+    }
+
+    void TsfDataProvider::EndCandidateUI()
+    {
+        if (_termControl->_candidateTimer) _termControl->_candidateTimer->Stop();
+        _termControl->CandidateBorder().Visibility(Visibility::Collapsed);
+        _termControl->CandidateGlow().Visibility(Visibility::Collapsed);
+        _termControl->CandidateRows().Children().Clear();
+        _termControl->_candidatePage.reset();
     }
 
     ControlCore* TsfDataProvider::_getCore() const noexcept
@@ -2606,6 +2988,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::Detach()
     {
+        GetTSFHandle().Unfocus(&_tsfDataProvider);
         _revokers = {};
 
         Control::ControlInteractivity old{ nullptr };

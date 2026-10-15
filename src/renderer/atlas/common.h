@@ -413,7 +413,8 @@ namespace Microsoft::Console::Render::Atlas
         // Core hue offset (degrees), saturation multiplier; absolute glow hue,
         // glow saturation. Resolve RGB on settings changes, not per pixel.
         f32x4 color{ 0.0f, 1.0f, 18.0f, 1.0f };
-        // Independent glow mix: 0 follows the core, 1 uses the glow color.
+        // Independent glow mix; y = mode (0 monochrome, 1 native, 2 tinted, 3 hybrid).
+        // z = optional panel-v1 grid attenuation [0, .15], native modes only.
         f32x4 glow{ 1.0f, 0.0f, 0.0f, 0.0f };
     };
 

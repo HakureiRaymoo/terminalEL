@@ -38,6 +38,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     constexpr bool IsTFELPreviewProperty(std::wstring_view name) noexcept
     {
+        if (name == L"TFELColorMode") return true;
+        if (name == L"TFELPanelGrid") return true;
         for (const auto property : TFELPreviewProperties)
         {
             if (name == property) return true;

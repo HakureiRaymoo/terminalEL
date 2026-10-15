@@ -2,6 +2,35 @@
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
 
+# terminalEL — 终端输入法适配分支 / Terminal IME adaptation
+
+本分支 `feature/terminal-ime-adaptation` 保存已由维护者确认基本可用的输入法适配版本。
+基于 Windows Terminal，为 TSF 候选列表提供 terminalEL 风格界面，支持键盘/鼠标选词、
+系统 UI 回退、Profile 设置继承，以及与终端协调的字号、字重、单色核心色和字形辉光。
+选中候选使用空心细框。候选浮层及柔光默认关闭，可在全局或 Profile“外观”中开启：
+
+```json
+{
+    "terminalEL.imeCandidateOverlay": true,
+    "terminalEL.imeCandidateGlow": true
+}
+```
+
+This branch is a terminal IME adaptation snapshot, locally exercised by the
+maintainer, not a packaged release or a claim of compatibility with every IME.
+It also includes the accompanying Native color, optional panel and settings work
+since Foundation v1. The frozen Foundation v1 renderer remains available.
+Candidate glyph glow uses Composition and is not pixel-identical to terminal shaders.
+
+本 fork 的实现、文档和开发脚本包含经维护者授权的 AI 辅助工作。
+AI-assisted development applies to this fork; upstream licenses and notices remain.
+
+- [候选框使用与实现说明](doc/terminalEL-ime-overlay.md)
+- [边界验收记录](doc/terminalEL-ime-acceptance.md)
+- [构建与交付流程](doc/terminalEL-release.md)
+
+## Upstream Windows Terminal documentation
+
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 <details>

@@ -118,6 +118,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
+        float FontEmSizeInDips() const noexcept;
         winrt::Windows::Foundation::Size FontSizeInDips() const;
 
         winrt::Windows::Foundation::Size FontSize() const noexcept;
@@ -423,7 +424,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         IControlSettings _settings{ nullptr };
-        std::optional<std::array<float, 16>> _tfelPreview;
+        std::optional<std::array<float, 18>> _tfelPreview;
         bool _hasUnfocusedAppearance{ false };
         IControlAppearance _unfocusedAppearance{ nullptr };
         Core::ICoreScheme _focusedColorSchemeOverride{ nullptr };

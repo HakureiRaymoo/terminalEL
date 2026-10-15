@@ -337,6 +337,10 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11PixelShader> _tfelExtractShader;
         wil::com_ptr<ID3D11PixelShader> _tfelBlurShader;
         wil::com_ptr<ID3D11PixelShader> _tfelCompositeShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelNativeExtractShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelNativeBlurShader;
+        wil::com_ptr<ID3D11PixelShader> _tfelNativeCompositeShader;
+        bool _tfelNativeMode{};
         wil::com_ptr<ID3D11RasterizerState> _tfelRasterizerState;
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;

@@ -425,6 +425,9 @@ namespace winrt::Microsoft::Terminal::Settings
         APPLY_TFEL_SETTING(TFELGlowHue)
         APPLY_TFEL_SETTING(TFELGlowSaturation)
         APPLY_TFEL_SETTING(TFELGlowMix)
+        APPLY_TFEL_SETTING(TFELPanelGrid)
+        APPLY_TFEL_SETTING(IMECandidateOverlay)
+        APPLY_TFEL_SETTING(IMECandidateGlow)
 #undef APPLY_TFEL_SETTING
     }
 

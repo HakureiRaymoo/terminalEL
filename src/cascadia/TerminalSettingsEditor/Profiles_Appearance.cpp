@@ -123,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TFEL_NUMBER(TFELGlowHue)
         TFEL_NUMBER(TFELGlowSaturation)
         TFEL_NUMBER(TFELGlowMix)
+        TFEL_NUMBER(TFELPanelGrid)
 #undef TFEL_NUMBER
     }
 

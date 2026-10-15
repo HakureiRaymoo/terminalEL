@@ -81,6 +81,9 @@ namespace Microsoft.Terminal.Control
         Single TFELContrast { get; };
         Single TFELBlackLevel { get; };
         Single TFELGamma { get; };
+        Single TFELPanelGrid { get; };
+        Boolean IMECandidateOverlay { get; };
+        Boolean IMECandidateGlow { get; };
         Single TFELPhosphorRed { get; };
         Single TFELPhosphorGreen { get; };
         Single TFELPhosphorBlue { get; };

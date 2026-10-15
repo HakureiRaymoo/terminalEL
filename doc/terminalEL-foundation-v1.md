@@ -1,5 +1,11 @@
 # Foundation v1 — approved visual baseline
 
+Native Color development now has a separate path documented in
+`terminalEL-native-color.md`. The v1 contract below remains unchanged; the older
+monochrome-only feature descriptions refer to the approved baseline. Current
+preview transport adds a mode field after the 16 numeric values, and native
+presets use the distinct `native-el-v1` renderer identifier.
+
 The maintainer approved the current visual result on 2026-10-11. Preserve this
 look as an immutable built-in preset, not as an alias for future defaults.
 

@@ -14,7 +14,7 @@ namespace Microsoft::Console::TSF
 {
     struct IDataProvider;
 
-    struct Implementation : ITfContextOwner, ITfContextOwnerCompositionSink, ITfTextEditSink
+    struct Implementation : ITfContextOwner, ITfContextOwnerCompositionSink, ITfTextEditSink, ITfUIElementSink
     {
         static void AvoidBuggyTSFConsoleFlags() noexcept;
         static void SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept;
@@ -29,6 +29,12 @@ namespace Microsoft::Console::TSF
         void Unfocus(IDataProvider* provider);
         bool HasActiveComposition() const noexcept;
         void FlushPendingComposition() noexcept;
+        void EnableCandidateProbe() noexcept;
+        void RefreshCandidateUI(IDataProvider* provider) noexcept;
+        void SelectCandidate(IDataProvider* provider, uint64_t revision, UINT index) noexcept;
+        STDMETHODIMP BeginUIElement(DWORD id, BOOL* show) noexcept override;
+        STDMETHODIMP UpdateUIElement(DWORD id) noexcept override;
+        STDMETHODIMP EndUIElement(DWORD id) noexcept override;
 
         // IUnknown methods
         STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
@@ -110,6 +116,10 @@ namespace Microsoft::Console::TSF
         void _doCompositionUpdate(TfEditCookie ec);
         TextAttribute _textAttributeFromAtom(TfGuidAtom atom) const;
         static COLORREF _colorFromDisplayAttribute(TF_DA_COLOR color);
+        void _probeUIElement(DWORD id, BOOL* show) noexcept;
+        void _probeEvent(const wchar_t* event, DWORD id, HRESULT result) const noexcept;
+        void _endCandidateUI(bool restoreSystem) noexcept;
+        bool _beginCandidateUI(DWORD id, ITfUIElement* element) noexcept;
 
         ULONG _referenceCount = 1;
 
@@ -125,6 +135,20 @@ namespace Microsoft::Console::TSF
         wil::com_ptr<ITfSource> _contextSource;
         DWORD _cookieContextOwner = TF_INVALID_COOKIE;
         DWORD _cookieTextEditSink = TF_INVALID_COOKIE;
+        wil::com_ptr<ITfSource> _probeSource;
+        DWORD _cookieUIElementProbe = TF_INVALID_COOKIE;
+        bool _candidateOverlayEnabled = false;
+        bool _candidateProbeEnabled = false;
+        wil::com_ptr<ITfUIElement> _candidateElement;
+        wil::com_ptr<IDataProvider> _candidateProvider;
+        DWORD _candidateId = 0;
+        ULONGLONG _candidateDeadline = 0;
+        bool _refreshingCandidates = false;
+        bool _candidateDataDirty = true;
+        ULONGLONG _candidateLayoutDeadline = 0;
+        uint64_t _candidateRevision = 0;
+        UINT _candidateFirst = 0;
+        UINT _candidateLast = 0;
         TfClientId _clientId = TF_CLIENTID_NULL;
 
         EditSessionProxy<&Implementation::_doCompositionUpdate> _editSessionCompositionUpdate{ this };

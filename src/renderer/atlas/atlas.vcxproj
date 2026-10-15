@@ -72,9 +72,13 @@
     <FxCompile Include="tfel_composite_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="tfel_native_extract_ps.hlsl"><ShaderType>Pixel</ShaderType></FxCompile>
+    <FxCompile Include="tfel_native_blur_ps.hlsl"><ShaderType>Pixel</ShaderType></FxCompile>
+    <FxCompile Include="tfel_native_composite_ps.hlsl"><ShaderType>Pixel</ShaderType></FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="tfel_native_tone.hlsli" />
   </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />

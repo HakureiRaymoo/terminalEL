@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include "Implementation.h"
+#include <cstdio>
 
 #include "Handle.h"
 #include "../buffer/out/TextAttribute.hpp"
@@ -102,6 +103,14 @@ HRESULT Implementation::Initialize()
 
 void Implementation::Uninitialize() noexcept
 {
+    _endCandidateUI(true);
+    if (_cookieUIElementProbe != TF_INVALID_COOKIE)
+    {
+        _probeEvent(L"stop", 0, S_OK);
+        std::ignore = _probeSource->UnadviseSink(_cookieUIElementProbe);
+        _cookieUIElementProbe = TF_INVALID_COOKIE;
+    }
+    _probeSource.reset();
     _provider.reset();
 
     if (_associatedHwnd)
@@ -178,6 +187,7 @@ HWND Implementation::FindWindowOfActiveTSF() noexcept
 
 void Implementation::AssociateFocus(IDataProvider* provider)
 {
+    if (_provider.get() != provider) _endCandidateUI(true);
     _provider = provider;
     _associatedHwnd = _provider->GetHwnd();
 
@@ -187,9 +197,33 @@ void Implementation::AssociateFocus(IDataProvider* provider)
 
 void Implementation::Focus(IDataProvider* provider)
 {
+    if (_provider.get() != provider) _endCandidateUI(true);
     _provider = provider;
+    if (_cookieUIElementProbe != TF_INVALID_COOKIE)
+    {
+        _probeEvent(L"focus", 0, S_OK);
+    }
 
     THROW_IF_FAILED(_threadMgrEx->SetFocus(_documentMgr.get()));
+    if (_candidateProbeEnabled)
+    {
+        wil::com_ptr<ITfDocumentMgr> focused;
+        const auto hr = _threadMgrEx->GetFocus(focused.addressof());
+        const auto identity = focused ? focused.try_query<IUnknown>() : wil::com_ptr<IUnknown>{};
+        const auto ownIdentity = _documentMgr.try_query<IUnknown>();
+        _probeEvent(identity && identity.get() == ownIdentity.get() ? L"focus-verified" : L"focus-mismatch", 0, hr);
+
+        wil::com_ptr<ITfInputProcessorProfileMgr> profiles;
+        auto profileHr = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
+                                         IID_PPV_ARGS(profiles.addressof()));
+        TF_INPUTPROCESSORPROFILE profile{};
+        if (SUCCEEDED(profileHr)) profileHr = profiles->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &profile);
+        wchar_t message[320];
+        swprintf_s(message, L"[terminalEL IME probe] pid=%lu tid=%lu event=input-profile hr=0x%08lX type=%lu lang=0x%04X overlay=%u\n",
+                   GetCurrentProcessId(), GetCurrentThreadId(), static_cast<unsigned long>(profileHr),
+                   profile.dwProfileType, static_cast<unsigned int>(profile.langid), _candidateOverlayEnabled ? 1u : 0u);
+        OutputDebugStringW(message);
+    }
 }
 
 void Implementation::Unfocus(IDataProvider* provider)
@@ -198,6 +232,12 @@ void Implementation::Unfocus(IDataProvider* provider)
     {
         return;
     }
+    if (_cookieUIElementProbe != TF_INVALID_COOKIE)
+    {
+        _probeEvent(L"unfocus", 0, S_OK);
+    }
+
+    _endCandidateUI(true);
 
     {
         const auto renderer = _provider->GetRenderer();
@@ -251,6 +291,312 @@ void Implementation::FlushPendingComposition() noexcept
     LOG_IF_FAILED(hr);
 }
 
+// Opt-in for the XAML Terminal host only. No activation flags are changed.
+void Implementation::EnableCandidateProbe() noexcept
+{
+    wchar_t enabled[2]{};
+    _candidateProbeEnabled = GetEnvironmentVariableW(L"TERMINALEL_IME_PROBE", enabled, ARRAYSIZE(enabled)) == 1 && enabled[0] == L'1';
+    _candidateOverlayEnabled = GetEnvironmentVariableW(L"TERMINALEL_IME_OVERLAY", enabled, ARRAYSIZE(enabled)) == 1 && enabled[0] == L'1';
+    // XAML hosts subscribe even when disabled so saved per-profile settings can
+    // enable the next candidate session without recreating the shared manager.
+    if (_cookieUIElementProbe != TF_INVALID_COOKIE)
+    {
+        return;
+    }
+
+    auto hr = _threadMgrEx->QueryInterface(IID_PPV_ARGS(_probeSource.addressof()));
+    if (SUCCEEDED(hr))
+    {
+        hr = _probeSource->AdviseSink(IID_ITfUIElementSink, static_cast<ITfUIElementSink*>(this), &_cookieUIElementProbe);
+    }
+    if (FAILED(hr))
+    {
+        _cookieUIElementProbe = TF_INVALID_COOKIE;
+        _probeSource.reset();
+    }
+    _probeEvent(L"subscribe", 0, hr);
+    _probeEvent(_candidateOverlayEnabled ? L"overlay-enabled" : L"overlay-disabled", 0, S_OK);
+}
+
+void Implementation::_probeEvent(const wchar_t* event, DWORD id, HRESULT result) const noexcept
+{
+    if (!_candidateProbeEnabled) return;
+    wchar_t message[320];
+    swprintf_s(message, L"[terminalEL IME probe] pid=%lu tid=%lu event=%ls id=%lu hr=0x%08lX provider=%u composition=%d\n",
+               GetCurrentProcessId(), GetCurrentThreadId(), event, id, static_cast<unsigned long>(result),
+               _provider ? 1u : 0u, _compositions);
+    OutputDebugStringW(message);
+}
+
+STDMETHODIMP Implementation::BeginUIElement(DWORD id, BOOL* show) noexcept
+{
+    if (!show) return E_POINTER;
+    _probeUIElement(id, show);
+    return S_OK;
+}
+
+STDMETHODIMP Implementation::UpdateUIElement(DWORD id) noexcept
+{
+    _probeUIElement(id, nullptr);
+    return S_OK;
+}
+
+STDMETHODIMP Implementation::EndUIElement(DWORD id) noexcept
+{
+    if (_candidateElement && _candidateId == id) _endCandidateUI(false);
+    // End may arrive after the object is unavailable: identify it by ID only.
+    _probeEvent(L"end", id, S_OK);
+    return S_OK;
+}
+
+void Implementation::_probeUIElement(DWORD id, BOOL* show) noexcept
+{
+    const bool begin = show != nullptr;
+    const BOOL incomingShow = show ? *show : FALSE;
+    wil::com_ptr<ITfUIElementMgr> manager;
+    auto hr = _threadMgrEx->QueryInterface(IID_PPV_ARGS(manager.addressof()));
+    wil::com_ptr<ITfUIElement> element;
+    if (SUCCEEDED(hr)) hr = manager->GetUIElement(id, element.addressof());
+    _probeEvent(begin ? L"begin" : L"update", id, hr);
+    if (FAILED(hr) || !element)
+    {
+        if (_candidateElement && _candidateId == id) _endCandidateUI(true);
+        return;
+    }
+
+    const auto candidates = element.try_query<ITfCandidateListUIElement>();
+    const auto behavior = element.try_query<ITfCandidateListUIElementBehavior>();
+    const auto reading = element.try_query<ITfReadingInformationUIElement>();
+    wil::com_ptr<ITfDocumentMgr> document;
+    const auto documentHr = candidates ? candidates->GetDocumentMgr(document.addressof()) : E_NOINTERFACE;
+    // Compare COM identity, not arbitrary interface pointer addresses.
+    wil::com_ptr<IUnknown> identity;
+    if (document) identity = document.try_query<IUnknown>();
+    const auto ownIdentity = _documentMgr.try_query<IUnknown>();
+    const bool owned = SUCCEEDED(documentHr) && identity && identity.get() == ownIdentity.get();
+
+    // A registered sink must explicitly allow the UI it does not draw. The
+    // observed initial value is FALSE on Microsoft Pinyin; preserving it hid
+    // the candidate window. Limit this decision to our active document.
+    if (show && owned && _provider)
+    {
+        *show = TRUE;
+        if (_provider->CandidateUIEnabled() && behavior && _beginCandidateUI(id, element.get()))
+        {
+            *show = FALSE;
+            _probeEvent(L"overlay-begin", id, S_OK);
+        }
+        else
+        {
+            _probeEvent(L"allow-system-ui", id, S_OK);
+        }
+    }
+
+    if (!begin && _candidateElement && _candidateId == id)
+    {
+        ++_candidateRevision;
+        _candidateDataDirty = true;
+        // Coalesce a burst of TSF notifications on the UI timer instead of
+        // rebuilding layout synchronously inside the IME's input callback.
+        // The overlay already fetched a complete page. Avoid a second set of
+        // cross-process metadata/string calls purely for the observation probe.
+        return;
+    }
+    if (!_candidateProbeEnabled) return;
+
+    UINT count = 0, selection = 0, page = 0, pages = 0;
+    HRESULT countHr = E_PENDING, selectionHr = E_PENDING, pageHr = E_PENDING, pagesHr = E_PENDING, stringHr = E_PENDING;
+    // Begin need not have populated content. Do not inspect other controls'
+    // candidates. Candidate/reading/composition strings are never logged.
+    if (!begin && owned && _provider)
+    {
+        countHr = candidates->GetCount(&count);
+        selectionHr = candidates->GetSelection(&selection);
+        pageHr = candidates->GetCurrentPage(&page);
+        pagesHr = candidates->GetPageIndex(nullptr, 0, &pages);
+        if (countHr == S_OK && selectionHr == S_OK && selection < count)
+        {
+            BSTR text = nullptr;
+            stringHr = candidates->GetString(selection, &text);
+            SysFreeString(text);
+        }
+    }
+    wchar_t message[768];
+    swprintf_s(message, L"[terminalEL IME probe] pid=%lu tid=%lu id=%lu begin=%u incomingShow=%d candidate=%u behavior=%u reading=%u owned=%u docHr=0x%08lX count=%u/0x%08lX selection=%u/0x%08lX page=%u/0x%08lX pages=%u/0x%08lX stringHr=0x%08lX\n",
+               GetCurrentProcessId(), GetCurrentThreadId(), id, begin ? 1u : 0u, incomingShow,
+               candidates ? 1u : 0u, behavior ? 1u : 0u, reading ? 1u : 0u, owned ? 1u : 0u,
+               static_cast<unsigned long>(documentHr), count, static_cast<unsigned long>(countHr),
+               selection, static_cast<unsigned long>(selectionHr), page, static_cast<unsigned long>(pageHr),
+               pages, static_cast<unsigned long>(pagesHr), static_cast<unsigned long>(stringHr));
+    OutputDebugStringW(message);
+}
+
+// Keep the candidate object and owning provider together. Never retarget an
+// in-flight element to the next pane just because the shared TSF handle focused it.
+bool Implementation::_beginCandidateUI(DWORD id, ITfUIElement* element) noexcept
+{
+    try
+    {
+        _endCandidateUI(true);
+        if (!_provider) return false;
+        _candidateProvider = _provider;
+        if (!_candidateProvider->BeginCandidateUI())
+        {
+            _endCandidateUI(false);
+            return false;
+        }
+        _candidateElement = element;
+        _candidateId = id;
+        _candidateDeadline = GetTickCount64() + 250;
+        ++_candidateRevision;
+        _candidateDataDirty = true;
+        _candidateLayoutDeadline = 0;
+        return true;
+    }
+    catch (...)
+    {
+        _endCandidateUI(true);
+        return false;
+    }
+}
+
+void Implementation::_endCandidateUI(bool restoreSystem) noexcept
+{
+    // Clear state before external calls: Show can reenter our sink.
+    auto element = std::move(_candidateElement);
+    ++_candidateRevision;
+    auto provider = std::move(_candidateProvider);
+    _candidateDeadline = 0;
+    try
+    {
+        if (provider) provider->EndCandidateUI();
+    }
+    CATCH_LOG();
+    if (restoreSystem && element)
+    {
+        const auto hr = element->Show(TRUE);
+        _probeEvent(L"overlay-system-fallback", _candidateId, hr);
+    }
+}
+
+void Implementation::RefreshCandidateUI(IDataProvider* provider) noexcept
+{
+    if (_refreshingCandidates || !_candidateElement || provider != _candidateProvider.get()) return;
+    if (!_candidateDataDirty && GetTickCount64() < _candidateLayoutDeadline) return;
+    _refreshingCandidates = true;
+    const auto reset = wil::scope_exit([&] { _refreshingCandidates = false; });
+    const auto element = _candidateElement;
+    const auto owner = _candidateProvider;
+    try
+    {
+        THROW_HR_IF(E_ABORT, _provider.get() != provider);
+        THROW_HR_IF(E_ABORT, !owner->CandidateUIEnabled());
+        wil::com_ptr<ITfDocumentMgr> focusedDocument;
+        THROW_IF_FAILED(_threadMgrEx->GetFocus(focusedDocument.addressof()));
+        THROW_HR_IF(E_ABORT, !focusedDocument ||
+                    focusedDocument.query<IUnknown>().get() != _documentMgr.query<IUnknown>().get());
+        if (!_candidateDataDirty)
+        {
+            THROW_HR_IF(E_ABORT, !owner->RefreshCandidateLayout());
+            _candidateLayoutDeadline = GetTickCount64() + 100;
+            return;
+        }
+        // Clear before calling COM so a reentrant Update is not lost.
+        _candidateDataDirty = false;
+        const auto candidates = element.query<ITfCandidateListUIElement>();
+        UINT count = 0;
+        const auto countHr = candidates->GetCount(&count);
+        // Begin may precede populated data. A UI-thread timer bounds that wait,
+        // including IMEs which never send Update while suppressed.
+        if ((countHr == E_PENDING || (SUCCEEDED(countHr) && count == 0)) &&
+            _candidateDeadline && GetTickCount64() < _candidateDeadline)
+        {
+            _candidateDataDirty = true;
+            return;
+        }
+        THROW_HR_IF(E_UNEXPECTED, countHr != S_OK);
+        THROW_HR_IF(E_UNEXPECTED, count == 0);
+        CandidatePage snapshot;
+        snapshot.revision = _candidateRevision;
+        UINT selection = 0;
+        THROW_HR_IF(E_UNEXPECTED, candidates->GetSelection(&selection) != S_OK);
+        THROW_HR_IF(E_UNEXPECTED, candidates->GetCurrentPage(&snapshot.page) != S_OK);
+        THROW_IF_FAILED(candidates->GetPageIndex(nullptr, 0, &snapshot.pages));
+        THROW_HR_IF(E_UNEXPECTED, snapshot.pages == 0 || snapshot.pages > 4096 || snapshot.page >= snapshot.pages);
+        std::vector<UINT> starts(snapshot.pages);
+        UINT actual = 0;
+        THROW_HR_IF(E_UNEXPECTED, candidates->GetPageIndex(starts.data(), snapshot.pages, &actual) != S_OK);
+        THROW_HR_IF(E_UNEXPECTED, actual != snapshot.pages || starts.front() != 0);
+        for (size_t i = 0; i < starts.size(); ++i)
+        {
+            THROW_HR_IF(E_UNEXPECTED, starts[i] >= count || (i && starts[i] <= starts[i - 1]));
+        }
+        const auto first = starts[snapshot.page];
+        const auto last = snapshot.page + 1 < snapshot.pages ? starts[snapshot.page + 1] : count;
+        THROW_HR_IF(E_UNEXPECTED, last <= first || last - first > 32 || selection < first || selection >= last);
+        snapshot.selection = selection - first;
+        snapshot.first = first;
+        for (auto index = first; index < last; ++index)
+        {
+            BSTR text = nullptr;
+            const auto free = wil::scope_exit([&] { SysFreeString(text); });
+            THROW_HR_IF(E_UNEXPECTED, candidates->GetString(index, &text) != S_OK);
+            const auto length = SysStringLen(text);
+            THROW_HR_IF(E_UNEXPECTED, length == 0 || length > 4096);
+            snapshot.entries.emplace_back(text, length);
+        }
+        // An IME COM call may pump messages and end/change this element.
+        if (_candidateElement.get() != element.get() || _candidateProvider.get() != owner.get()) return;
+        if (snapshot.revision != _candidateRevision) return;
+        _candidateFirst = first;
+        _candidateLast = last;
+        THROW_HR_IF(E_ABORT, !owner->UpdateCandidateUI(snapshot));
+        if (_candidateElement.get() != element.get() || _candidateProvider.get() != owner.get()) return;
+        if (_candidateDeadline) _probeEvent(L"overlay-ready", _candidateId, S_OK);
+        _candidateDeadline = 0;
+        _candidateLayoutDeadline = GetTickCount64() + 100;
+    }
+    catch (...)
+    {
+        // Do not tear down a newer element if an external call pumped messages.
+        if (_candidateElement.get() == element.get() && _candidateProvider.get() == owner.get())
+        {
+            _probeEvent(L"overlay-read-failed", _candidateId, wil::ResultFromCaughtException());
+            _endCandidateUI(true);
+        }
+    }
+}
+
+void Implementation::SelectCandidate(IDataProvider* provider, uint64_t revision, UINT index) noexcept
+{
+    if (!_candidateElement || _provider.get() != provider || _candidateProvider.get() != provider ||
+        _candidateDataDirty || revision != _candidateRevision || index < _candidateFirst || index >= _candidateLast) return;
+    const auto element = _candidateElement;
+    try
+    {
+        THROW_HR_IF(E_ABORT, !provider->CandidateUIEnabled());
+        wil::com_ptr<ITfDocumentMgr> focused;
+        THROW_IF_FAILED(_threadMgrEx->GetFocus(focused.addressof()));
+        THROW_HR_IF(E_ABORT, !focused || focused.query<IUnknown>().get() != _documentMgr.query<IUnknown>().get());
+        const auto behavior = element.query<ITfCandidateListUIElementBehavior>();
+        if (_candidateElement.get() != element.get() || revision != _candidateRevision || _candidateDataDirty) return;
+        THROW_IF_FAILED(behavior->SetSelection(index));
+        // SetSelection can synchronously send Update (and thus change revision).
+        // End/focus changes must still prevent finalizing an obsolete element.
+        if (_candidateElement.get() != element.get() || _provider.get() != provider || _candidateProvider.get() != provider) return;
+        THROW_IF_FAILED(behavior->Finalize());
+        _probeEvent(L"overlay-click-finalize", 0, S_OK);
+    }
+    catch (...)
+    {
+        if (_candidateElement.get() == element.get() && _candidateProvider.get() == provider)
+        {
+            _probeEvent(L"overlay-click-failed", _candidateId, wil::ResultFromCaughtException());
+            _endCandidateUI(true);
+        }
+    }
+}
+
 #pragma region IUnknown
 
 STDMETHODIMP Implementation::QueryInterface(REFIID riid, void** ppvObj) noexcept
@@ -271,6 +617,10 @@ STDMETHODIMP Implementation::QueryInterface(REFIID riid, void** ppvObj) noexcept
     else if (IsEqualGUID(riid, IID_ITfTextEditSink))
     {
         *ppvObj = static_cast<ITfTextEditSink*>(this);
+    }
+    else if (IsEqualGUID(riid, IID_ITfUIElementSink))
+    {
+        *ppvObj = static_cast<ITfUIElementSink*>(this);
     }
     else if (IsEqualGUID(riid, IID_IUnknown))
     {
@@ -406,12 +756,14 @@ try
 {
     _compositions++;
     *pfOk = TRUE;
+    _probeEvent(L"composition-start", 0, S_OK);
     return S_OK;
 }
 CATCH_RETURN()
 
 STDMETHODIMP Implementation::OnUpdateComposition(ITfCompositionView* pComposition, ITfRange* pRangeNew) noexcept
 {
+    _probeEvent(L"composition-update", 0, S_OK);
     return S_OK;
 }
 
@@ -424,6 +776,7 @@ try
     }
 
     _compositions--;
+    _probeEvent(L"composition-end", 0, S_OK);
     if (_compositions == 0)
     {
         // https://learn.microsoft.com/en-us/windows/win32/api/msctf/nf-msctf-itfcontext-requesteditsession

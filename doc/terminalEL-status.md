@@ -1,5 +1,18 @@
 # terminalEL 状态与后续开发
 
+## 当前摘要（2026-10-15）
+
+候选浮层、设置、输入响应、鼠标选词及外缘/字形辉光已有维护者本地验收反馈，
+最新指针释放加固后也反馈无问题。Native/Tone 和 panel-v1 已有本地实现；
+panel/calibration 仍待明确的运行验收结论。正在准备首版交付流程，尚未打包发布。
+详见 `terminalEL-handoff.md`、`terminalEL-release.md` 与
+`terminalEL-ime-acceptance.md`。版本号和包格式尚未确定。
+
+以下为早期阶段的历史记录，不代表当前功能缺失或输出目录状态。
+
+Native Color 第一版已在基线提交 `e5ebf2089` 之后本地实现，尚待构建与视觉验收。
+详见 `terminalEL-native-color.md`；以下表格保留已验收单色基线的范围记录。
+
 最新源码更新：2026-10-12。本轮 UI 未运行编译或 GUI。下文工具链与输出布局记录来自 2026-10-11 的历史核查，不代表当前输出目录状态。最新预设行为与人工验收项见 `terminalEL-foundation-v1.md`。
 
 ## 目标与已实现范围
@@ -123,3 +136,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Unpackaged layout preparation failed.' }
 Profile 色彩与继承 UI 验收 → 设置页性能测量 → 稳定基线发布确认 → Native Color + TFEL Glow → Temporal Persistence → Panel Characteristics → Calibration。
 
 建议先让 Native Color 成为明确模式而非默默改变单色默认值；彩色 emission/halo 会改变纹理格式及带宽预算。余辉必须同时设计 idle redraw、衰减截止和设备丢失重置，避免为了效果长期占用 GPU。涉及可感知的默认行为变化时先确认产品取舍。
+# 2026-10-12 optional panel/calibration follow-up
+
+Implemented local panel-v1 grid (off by default, Native modes only) with global/
+Profile controls and live preview, plus display-only calibration charts. Assessment,
+settings contract and manual acceptance: `terminalEL-panel-calibration.md`.
+No compilation performed; earlier uncommitted work retained. GPU/GUI acceptance
+remains pending. Non-compiling panel guard: `tools/Test-TerminalELPanel.py`.

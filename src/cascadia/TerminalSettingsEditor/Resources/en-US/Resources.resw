@@ -2965,4 +2965,21 @@ This action is applied immediately and cannot be undone.</value>
   <data name="TFELMonochromeOnly" xml:space="preserve"><value>This renderer supports monochrome presets only.</value></data>
   <data name="TFELInvalidRange" xml:space="preserve"><value>Preset parameters must be finite numbers within their supported ranges.</value></data>
   <data name="TFELProfileInheritance.Text" xml:space="preserve"><value>Values inherit from parent profiles, then global EL settings. Each reset button clears only this profile's override. The independent glow switch and mix share one setting; resetting either restores the inherited mix. Save keeps edits.</value></data>
+  <data name="TFELModeCard.Header" xml:space="preserve"><value>EL rendering mode</value></data>
+  <data name="TFELModeCard.Description" xml:space="preserve"><value>Native modes preserve source hues; brightness, contrast, black level and gamma affect both the frame and glow emission. Core color controls apply only to monochrome. Bloom also affects bright backgrounds and selections. Tinted mode uses glow hue, saturation and mix.</value></data>
+  <data name="TFELModeMono.Content" xml:space="preserve"><value>TFEL monochrome v1</value></data>
+  <data name="TFELModeNative.Content" xml:space="preserve"><value>Native color + matching glow</value></data>
+  <data name="TFELModeTinted.Content" xml:space="preserve"><value>Native color + tinted glow</value></data>
+  <data name="TFELModeHybrid.Content" xml:space="preserve"><value>Native color + neutral phosphor</value></data>
+  <data name="TFELHybridHelp.Text" xml:space="preserve"><value>Hybrid mode maps near-gray pixels to the monochrome core color and independent glow color (default yellow/orange). Colored pixels keep their own colors and glow. Gray backgrounds may also be mapped. Glow mix/switch does not apply to hybrid mode.</value></data>
+  <data name="TFELPanelGridCard.Header" xml:space="preserve"><value>Optional panel grid (v1)</value></data>
+  <data name="TFELPanelGridCard.Description" xml:space="preserve"><value>Native modes only. 0 is off; up to 0.15 dims static pixel separators. Independent of color presets; monochrome ignores this setting.</value></data>
+  <data name="TFELPanelGridInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Panel grid attenuation</value></data>
+  <data name="TFELCalibrationHelp.Text" xml:space="preserve"><value>Visual calibration: run tools/Show-TerminalELColors.ps1 -Page Calibration in this terminal and adjust Tone, then Bloom, then the optional grid. This is a visual aid, not monitor color management.</value></data>
+  <data name="IMECandidateOverlayCard.Header" xml:space="preserve"><value>Terminal-style IME candidates</value></data>
+  <data name="IMECandidateOverlayCard.Description" xml:space="preserve"><value>Use a keyboard-only candidate overlay matching the terminal. Unsupported cases use the system UI. Applies after saving; enabling starts with the next candidate session.</value></data>
+  <data name="IMECandidateOverlaySwitch.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Terminal-style IME candidates</value></data>
+  <data name="IMECandidateGlowCard.Header" xml:space="preserve"><value>Candidate window soft glow</value></data>
+  <data name="IMECandidateGlowCard.Description" xml:space="preserve"><value>Add soft text and inner/outer edge glow to terminal-style IME candidates. Requires the terminal-style candidate window. Disabled in high contrast.</value></data>
+  <data name="IMECandidateGlowSwitch.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Candidate window soft glow</value></data>
 </root>

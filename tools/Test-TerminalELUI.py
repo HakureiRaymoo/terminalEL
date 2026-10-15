@@ -16,7 +16,7 @@ xaml = ET.parse(editor / "GlobalAppearance.xaml").getroot()
 uid_key = "{http://schemas.microsoft.com/winfx/2006/xaml}Uid"
 for element in xaml.iter():
     uid = element.get(uid_key, "")
-    if uid.startswith("TFEL") or uid.startswith("Globals_TFEL") or "TerminalEL" in uid:
+    if uid.startswith(("TFEL", "Globals_TFEL", "IMECandidate")) or "TerminalEL" in uid:
         for language, keys in resources.items():
             assert any(key.startswith(uid + ".") for key in keys), (language, uid)
 
@@ -41,7 +41,7 @@ for element in xaml.iter():
         assert "Mode=OneWay" in value, name
         assert element.get("Tag") == name, name
         assert element.get("ValueChanged") == "TFELNumber_ValueChanged", name
-assert len(numbers) == 13 and numbers.keys() == sliders.keys()
+assert len(numbers) == 14 and numbers.keys() == sliders.keys()
 for name, number in numbers.items():
     for bound in ("Minimum", "Maximum"):
         assert float(number.get(bound)) == float(sliders[name].get(bound)), (name, bound)
@@ -52,7 +52,7 @@ profile_sliders = {}
 reset_names = set()
 for element in profile.iter():
     uid = element.get(uid_key, "")
-    if uid.startswith("TFEL"):
+    if uid.startswith(("TFEL", "IMECandidate")):
         for language, keys in resources.items():
             assert any(key.startswith(uid + ".") for key in keys), (language, uid)
     if element.tag.endswith("}SettingResetButton"):
@@ -68,12 +68,20 @@ for element in profile.iter():
         assert "Mode=OneWay" in element.get("Value"), name
         assert element.get("Tag") == name, name
         assert element.get("ValueChanged") == "TFELNumber_ValueChanged", name
-assert set(profile_numbers) == {"TFELHue", "TFELSaturation", "TFELGlowHue", "TFELGlowSaturation", "TFELGlowMix"}
+assert set(profile_numbers) == {"TFELHue", "TFELSaturation", "TFELGlowHue", "TFELGlowSaturation", "TFELGlowMix", "TFELPanelGrid"}
 for name, number in profile_numbers.items():
     assert name in reset_names, name
     for bound in ("Minimum", "Maximum"):
         assert float(number.get(bound)) == float(profile_sliders[name].get(bound)) == float(numbers[name].get(bound)), (name, bound)
 assert len([e for e in profile.iter() if e.get("SettingName") == "TFELGlowMix"]) == 2
 
-print("PASS: unique resources, en-US/zh-CN TFEL coverage, 13 global numeric pairs, 5 profile color pairs, matching bounds and reset targets.")
+for name in ("IMECandidateOverlay", "IMECandidateGlow"):
+    for tree, owner in ((xaml, "ViewModel"), (profile, "Profile")):
+        switches = [e for e in tree.iter() if e.get(uid_key) == name + "Switch"]
+        assert len(switches) == 1, (owner, name)
+        assert switches[0].get("IsOn") == f"{{x:Bind {owner}.{name}, Mode=TwoWay}}", (owner, name)
+    resets = [e for e in profile.iter() if e.tag.endswith("}SettingResetButton") and e.get("SettingName") == name]
+    assert len(resets) == 1 and resets[0].get("Target") == "{x:Bind Profile}", name
+
+print("PASS: unique resources, en-US/zh-CN TFEL and IME coverage, 14 global numeric pairs, 6 profile numeric pairs, matching bounds/reset targets, IME toggle bindings.")
 print("C++/WinRT compilation, XAML resource loading, focus/validation and Save/Reset still require GUI acceptance.")

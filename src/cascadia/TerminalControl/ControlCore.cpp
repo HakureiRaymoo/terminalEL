@@ -54,14 +54,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     static void applyTFELSettings(const IControlSettings& settings, ::Microsoft::Console::Render::Atlas::AtlasEngine& engine,
-                                  const std::optional<std::array<float, 16>>& preview) noexcept
+                                  const std::optional<std::array<float, 18>>& preview) noexcept
     {
         ::Microsoft::Console::Render::Atlas::TFELSettings tfel;
         tfel.tone = { settings.TFELBrightness(), settings.TFELContrast(), settings.TFELBlackLevel(), settings.TFELGamma() };
         tfel.phosphorColor = { settings.TFELPhosphorRed(), settings.TFELPhosphorGreen(), settings.TFELPhosphorBlue(), 0.0f };
         tfel.bloom = { settings.TFELBloomIntensity(), settings.TFELBloomThreshold(), settings.TFELBloomRadius(), settings.TFELBloomSoftness() };
         tfel.color = { settings.TFELHue(), settings.TFELSaturation(), settings.TFELGlowHue(), settings.TFELGlowSaturation() };
-        tfel.glow = { settings.TFELGlowMix(), 0.0f, 0.0f, 0.0f };
+        const auto mode = settings.TFELColorMode();
+        tfel.glow = { settings.TFELGlowMix(), mode == L"native" ? 1.0f : mode == L"native-tinted" ? 2.0f : mode == L"native-hybrid" ? 3.0f : 0.0f, settings.TFELPanelGrid(), 0.0f };
         if (preview)
         {
             const auto& v = *preview;
@@ -69,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             tfel.bloom = { v[4], v[5], v[6], v[7] };
             tfel.phosphorColor = { v[8], v[9], v[10], 0.0f };
             tfel.color = { v[11], v[12], v[13], v[14] };
-            tfel.glow = { v[15], 0.0f, 0.0f, 0.0f };
+            tfel.glow = { v[15], v[16], v[17], 0.0f };
         }
         engine.SetTFELSettings(tfel);
     }
@@ -962,7 +963,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::PreviewTFEL(winrt::array_view<const float> values)
     {
-        if (!values.empty() && values.size() != 16)
+        if (!values.empty() && values.size() != 18)
         {
             throw winrt::hresult_invalid_argument();
         }
@@ -1568,6 +1569,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     FontInfo ControlCore::GetFont() const
     {
         return _actualFont;
+    }
+
+    float ControlCore::FontEmSizeInDips() const noexcept
+    {
+        // Terminal font sizes are points; XAML FontSize is DIPs. Use the
+        // requested em size (including zoom), not cell height/line spacing.
+        return _desiredFont.GetFontSize() * (96.0f / 72.0f);
     }
 
     winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept

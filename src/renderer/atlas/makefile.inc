@@ -16,6 +16,15 @@ $(OBJ_PATH)\$(O)\tfel_shader_vs.h: tfel_shader_vs.hlsl
 
 # Pixel Shaders
 
+$(OBJ_PATH)\$(O)\tfel_native_extract_ps.h: tfel_native_extract_ps.hlsl tfel_native_tone.hlsli
+    $(FXC) $(FXC_FLAGS) /Tps_$(FXC_PROFILE_VERSION) /Fh"$@" /Vn$(*B) tfel_native_extract_ps.hlsl
+
+$(OBJ_PATH)\$(O)\tfel_native_blur_ps.h: tfel_native_blur_ps.hlsl
+    $(FXC) $(FXC_FLAGS) /Tps_$(FXC_PROFILE_VERSION) /Fh"$@" /Vn$(*B) $?
+
+$(OBJ_PATH)\$(O)\tfel_native_composite_ps.h: tfel_native_composite_ps.hlsl tfel_native_tone.hlsli
+    $(FXC) $(FXC_FLAGS) /Tps_$(FXC_PROFILE_VERSION) /Fh"$@" /Vn$(*B) tfel_native_composite_ps.hlsl
+
 $(OBJ_PATH)\$(O)\custom_shader_ps.h: custom_shader_ps.hlsl
     @$(ECHO) Compiling shader $(*F)...
     $(FXC) $(FXC_FLAGS) /Tps_$(FXC_PROFILE_VERSION) /Fh"$@" /Vn$(*B) $?

@@ -422,6 +422,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
         PROFILE_TFEL_SETTINGS(HANDLE)
+        HANDLE(TFELColorMode)
 #undef HANDLE_PROJECTED
 #undef HANDLE
         return false;
@@ -439,6 +440,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
         PROFILE_TFEL_SETTINGS(HANDLE)
+        HANDLE(TFELColorMode)
 #undef HANDLE_PROJECTED
 #undef HANDLE
     }
@@ -454,6 +456,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
         PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
         PROFILE_TFEL_SETTINGS(HANDLE)
+        HANDLE(TFELColorMode)
 #undef HANDLE_PROJECTED
 #undef HANDLE
         return nullptr;

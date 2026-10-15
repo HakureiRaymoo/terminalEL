@@ -71,6 +71,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Single, TFELContrast);
         INHERITABLE_SETTING(Single, TFELBlackLevel);
         INHERITABLE_SETTING(Single, TFELGamma);
+        INHERITABLE_SETTING(Single, TFELPanelGrid);
+        INHERITABLE_SETTING(Boolean, IMECandidateOverlay);
+        INHERITABLE_SETTING(Boolean, IMECandidateGlow);
         INHERITABLE_SETTING(Single, TFELPhosphorRed);
         INHERITABLE_SETTING(Single, TFELPhosphorGreen);
         INHERITABLE_SETTING(Single, TFELPhosphorBlue);

@@ -19,6 +19,9 @@
 #include <tfel_bloom_extract_ps.h>
 #include <tfel_bloom_blur_ps.h>
 #include <tfel_composite_ps.h>
+#include <tfel_native_extract_ps.h>
+#include <tfel_native_blur_ps.h>
+#include <tfel_native_composite_ps.h>
 
 #include "BuiltinGlyphs.h"
 #include "dwrite_helpers.h"
@@ -116,6 +119,9 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
     THROW_IF_FAILED(p.device->CreatePixelShader(tfel_bloom_extract_ps, sizeof(tfel_bloom_extract_ps), nullptr, _tfelExtractShader.addressof()));
     THROW_IF_FAILED(p.device->CreatePixelShader(tfel_bloom_blur_ps, sizeof(tfel_bloom_blur_ps), nullptr, _tfelBlurShader.addressof()));
     THROW_IF_FAILED(p.device->CreatePixelShader(tfel_composite_ps, sizeof(tfel_composite_ps), nullptr, _tfelCompositeShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_native_extract_ps, sizeof(tfel_native_extract_ps), nullptr, _tfelNativeExtractShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_native_blur_ps, sizeof(tfel_native_blur_ps), nullptr, _tfelNativeBlurShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(tfel_native_composite_ps, sizeof(tfel_native_composite_ps), nullptr, _tfelNativeCompositeShader.addressof()));
     {
         D3D11_RASTERIZER_DESC desc{};
         desc.FillMode = D3D11_FILL_SOLID;
@@ -360,6 +366,12 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     if (tfelChanged)
     {
         const auto& settings = *p.s->tfel;
+        const bool nativeMode = settings.glow.y != 0.0f;
+        if (_tfelNativeMode != nativeMode)
+        {
+            _tfelNativeMode = nativeMode;
+            _releaseTFELBloomTargets();
+        }
         _tfelParameters.tone = settings.tone;
         _tfelParameters.phosphorColor = tfelCoreColor(settings);
         const auto core = _tfelParameters.phosphorColor;
@@ -369,6 +381,21 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
                                       core.y + (halo.y - core.y) * mix,
                                       core.z + (halo.z - core.z) * mix, 0.0f };
         _tfelParameters.bloom = settings.bloom;
+        if (_tfelNativeMode)
+        {
+            // Optional panel-v1 output modulation; unused by frozen monochrome shaders.
+            _tfelParameters.phosphorColor.w = settings.glow.z;
+            // Native core remains the original frame. Independent tint has unit
+            // brightness and is not affected by monochrome phosphor settings.
+            _tfelParameters.glowColor = tfelHsvToRgb(settings.color.z, settings.color.w, 1.0f);
+            _tfelParameters.glowColor.w = settings.glow.y == 2.0f ? settings.glow.x : 0.0f;
+            if (settings.glow.y == 3.0f)
+            {
+                // Hybrid uses independent phosphor core/halo colors. Never
+                // apply glowMix to colored text or turn neutral glow yellow.
+                _tfelParameters.glowColor.w = -1.0f;
+            }
+        }
     }
     if (cellCountChanged)
     {
@@ -400,7 +427,8 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 void BackendD3D::_recreateTFELRenderTarget(const RenderingPayload& p)
 {
     constexpr UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_LOAD | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
-    for (const auto format : { DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R16_FLOAT })
+    const auto bloomFormat = _tfelNativeMode ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16_FLOAT;
+    for (const auto format : { DXGI_FORMAT_R32_FLOAT, bloomFormat })
     {
         UINT support = 0;
         THROW_IF_FAILED(p.device->CheckFormatSupport(format, &support));
@@ -444,8 +472,8 @@ void BackendD3D::_recreateTFELRenderTarget(const RenderingPayload& p)
         THROW_IF_FAILED(p.device->CreateShaderResourceView(target.texture.get(), nullptr, target.srv.addressof()));
     };
     create(_tfelEmission, full, DXGI_FORMAT_R32_FLOAT);
-    create(_tfelBloomA, half, DXGI_FORMAT_R16_FLOAT);
-    create(_tfelBloomB, half, DXGI_FORMAT_R16_FLOAT);
+    create(_tfelBloomA, half, bloomFormat);
+    create(_tfelBloomB, half, bloomFormat);
     _tfelEmissionSize = full;
     _tfelBloomSize = half;
 }
@@ -2629,20 +2657,24 @@ void BackendD3D::_executeTFELShader(RenderingPayload& p)
         p.deviceContext->PSSetSamplers(0, 1, _tfelSamplerState.addressof());
         p.deviceContext->Draw(4, 0);
     };
-    pass(_tfelEmission.rtv.get(), _tfelEmissionSize, _tfelPixelShader.get(), _tfelOffscreenTextureView.get(), nullptr, {});
+    if (!_tfelNativeMode)
+        pass(_tfelEmission.rtv.get(), _tfelEmissionSize, _tfelPixelShader.get(), _tfelOffscreenTextureView.get(), nullptr, {});
     ID3D11ShaderResourceView* bloomInput = nullptr;
     if (_tfelParameters.bloom.x > 0.0f)
     {
-        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, _tfelExtractShader.get(), _tfelEmission.srv.get(), nullptr, {});
+        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, _tfelNativeMode ? _tfelNativeExtractShader.get() : _tfelExtractShader.get(),
+             _tfelNativeMode ? _tfelOffscreenTextureView.get() : _tfelEmission.srv.get(), nullptr, {});
         const f32 inverseWidth = 1.0f / _tfelBloomSize.x;
         const f32 inverseHeight = 1.0f / _tfelBloomSize.y;
-        pass(_tfelBloomB.rtv.get(), _tfelBloomSize, _tfelBlurShader.get(), _tfelBloomA.srv.get(), nullptr, { inverseWidth, inverseHeight, 1.0f, 0.0f });
-        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, _tfelBlurShader.get(), _tfelBloomB.srv.get(), nullptr, { inverseWidth, inverseHeight, 0.0f, 1.0f });
+        auto blurShader = _tfelNativeMode ? _tfelNativeBlurShader.get() : _tfelBlurShader.get();
+        pass(_tfelBloomB.rtv.get(), _tfelBloomSize, blurShader, _tfelBloomA.srv.get(), nullptr, { inverseWidth, inverseHeight, 1.0f, 0.0f });
+        pass(_tfelBloomA.rtv.get(), _tfelBloomSize, blurShader, _tfelBloomB.srv.get(), nullptr, { inverseWidth, inverseHeight, 0.0f, 1.0f });
         bloomInput = _tfelBloomA.srv.get();
     }
     // The composite shader uses the same intensity condition. Bind no Bloom
     // input when disabled, so old or uninitialized halo contents cannot leak in.
-    pass(_renderTargetView.get(), _tfelEmissionSize, _tfelCompositeShader.get(), _tfelEmission.srv.get(), bloomInput, {});
+    pass(_renderTargetView.get(), _tfelEmissionSize, _tfelNativeMode ? _tfelNativeCompositeShader.get() : _tfelCompositeShader.get(),
+         _tfelNativeMode ? _tfelOffscreenTextureView.get() : _tfelEmission.srv.get(), bloomInput, {});
 
     // Do not leave the TFEL input SRV bound while restoring the render target.
     // This also prevents an RTV/SRV conflict on the next frame.

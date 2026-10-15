@@ -99,6 +99,24 @@ void Handle::FlushPendingComposition() const noexcept
     }
 }
 
+void Handle::EnableCandidateProbe() const noexcept
+{
+    if (_impl)
+    {
+        _impl->EnableCandidateProbe();
+    }
+}
+
+void Handle::RefreshCandidateUI(IDataProvider* provider) const noexcept
+{
+    if (_impl) _impl->RefreshCandidateUI(provider);
+}
+
+void Handle::SelectCandidate(IDataProvider* provider, uint64_t revision, UINT index) const noexcept
+{
+    if (_impl) _impl->SelectCandidate(provider, revision, index);
+}
+
 void Handle::_destroy() noexcept
 {
     if (_impl)

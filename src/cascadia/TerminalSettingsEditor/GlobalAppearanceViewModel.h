@@ -48,6 +48,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELContrast);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELBlackLevel);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELGamma);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPanelGrid);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, IMECandidateOverlay);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, IMECandidateGlow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorRed);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorGreen);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TFELPhosphorBlue);
@@ -81,6 +84,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteTFELPreset(int32_t index);
         void UpdateTFELPreset(int32_t index);
         hstring TFELCurrentPresetStatus() const;
+        int32_t TFELModeIndex() const { return TFELColorMode() == L"native" ? 1 : TFELColorMode() == L"native-tinted" ? 2 : TFELColorMode() == L"native-hybrid" ? 3 : 0; }
+        void TFELModeIndex(int32_t value)
+        {
+            if (value >= 0 && value <= 3) TFELColorMode(value == 1 ? L"native" : value == 2 ? L"native-tinted" : value == 3 ? L"native-hybrid" : L"monochrome");
+        }
 
     private:
         Model::GlobalAppSettings _GlobalSettings;
@@ -93,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             hstring name;
             std::array<float, 16> values;
             uint32_t storageIndex{};
+            hstring mode{ L"monochrome" };
         };
         std::vector<UserTFELPreset> _userTFELPresets;
         void _LoadTFELPresets();

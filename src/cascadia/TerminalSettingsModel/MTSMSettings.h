@@ -32,6 +32,9 @@ Author(s):
     X(float, TFELContrast, "terminalEL.contrast", 1.0f)                                                                           \
     X(float, TFELBlackLevel, "terminalEL.blackLevel", 0.0f)                                                                       \
     X(float, TFELGamma, "terminalEL.gamma", 1.0f)                                                                                 \
+    X(bool, IMECandidateGlow, "terminalEL.imeCandidateGlow", false)                                                              \
+    X(bool, IMECandidateOverlay, "terminalEL.imeCandidateOverlay", false)                                                        \
+    X(float, TFELPanelGrid, "terminalEL.panelGrid", 0.0f)                                                                         \
     X(float, TFELPhosphorRed, "terminalEL.phosphorRed", 1.0f)                                                                     \
     X(float, TFELPhosphorGreen, "terminalEL.phosphorGreen", 0.82f)                                                               \
     X(float, TFELPhosphorBlue, "terminalEL.phosphorBlue", 0.04f)                                                                 \
@@ -143,6 +146,9 @@ Author(s):
     X(float, TFELContrast, "terminalEL.contrast")                                                                                                                 \
     X(float, TFELBlackLevel, "terminalEL.blackLevel")                                                                                                             \
     X(float, TFELGamma, "terminalEL.gamma")                                                                                                                       \
+    X(bool, IMECandidateGlow, "terminalEL.imeCandidateGlow")                                                                                                     \
+    X(bool, IMECandidateOverlay, "terminalEL.imeCandidateOverlay")                                                                                               \
+    X(float, TFELPanelGrid, "terminalEL.panelGrid")                                                                                                               \
     X(float, TFELPhosphorRed, "terminalEL.phosphorRed")                                                                                                           \
     X(float, TFELPhosphorGreen, "terminalEL.phosphorGreen")                                                                                                       \
     X(float, TFELPhosphorBlue, "terminalEL.phosphorBlue")                                                                                                         \

@@ -471,7 +471,9 @@ void AtlasEngine::SetTFELSettings(const TFELSettings& settings) noexcept
                          clamp(settings.color.y, 0.0f, 2.0f, defaults.color.y),
                          clamp(settings.color.z, 0.0f, 360.0f, defaults.color.z),
                          clamp(settings.color.w, 0.0f, 1.0f, defaults.color.w) };
-    normalized.glow = { clamp(settings.glow.x, 0.0f, 1.0f, defaults.glow.x), 0.0f, 0.0f, 0.0f };
+    normalized.glow = { clamp(settings.glow.x, 0.0f, 1.0f, defaults.glow.x),
+                        settings.glow.y == 1.0f || settings.glow.y == 2.0f || settings.glow.y == 3.0f ? settings.glow.y : 0.0f,
+                        clamp(settings.glow.z, 0.0f, 0.15f, 0.0f), 0.0f };
     *_api.s.write()->tfel.write() = normalized;
 }
 

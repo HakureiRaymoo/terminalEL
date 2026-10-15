@@ -129,6 +129,9 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELContrast);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELBlackLevel);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELGamma);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELPanelGrid);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, IMECandidateOverlay);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, IMECandidateGlow);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELBloomIntensity);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELBloomThreshold);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELBloomRadius);
@@ -142,6 +145,8 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELGlowSaturation);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Single, TFELGlowMix);
         Boolean TFELIndependentGlow;
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TFELColorMode);
+        Int32 TFELModeIndex;
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);

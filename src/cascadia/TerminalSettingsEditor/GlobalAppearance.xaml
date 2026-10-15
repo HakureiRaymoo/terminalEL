@@ -26,7 +26,13 @@
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}" GotFocus="TFELNumber_GotFocus">
+        <local:SettingsCard x:Uid="IMECandidateOverlayCard">
+            <ToggleSwitch x:Uid="IMECandidateOverlaySwitch" IsOn="{x:Bind ViewModel.IMECandidateOverlay, Mode=TwoWay}" />
+        </local:SettingsCard>
 
+        <local:SettingsCard x:Uid="IMECandidateGlowCard">
+            <ToggleSwitch x:Uid="IMECandidateGlowSwitch" IsOn="{x:Bind ViewModel.IMECandidateGlow, Mode=TwoWay}" />
+        </local:SettingsCard>
         <!--  Section: Visual style  -->
         <TextBlock x:Uid="Globals_Section_VisualStyle"
                    Margin="0,20,0,4"
@@ -67,6 +73,22 @@
         </local:SettingsExpander>
 
         <!-- terminalEL display model -->
+        <TextBlock x:Uid="TFELHybridHelp" TextWrapping="Wrap" />
+        <local:SettingsCard x:Uid="TFELModeCard">
+            <ComboBox SelectedIndex="{x:Bind ViewModel.TFELModeIndex, Mode=TwoWay}">
+                <ComboBoxItem x:Uid="TFELModeMono" />
+                <ComboBoxItem x:Uid="TFELModeNative" />
+                <ComboBoxItem x:Uid="TFELModeTinted" />
+                <ComboBoxItem x:Uid="TFELModeHybrid" />
+            </ComboBox>
+        </local:SettingsCard>
+        <local:SettingsCard x:Uid="TFELPanelGridCard">
+            <StackPanel Width="240">
+                <Slider x:Uid="TFELPanelGridInput" Minimum="0" Maximum="0.15" StepFrequency="0.01" Value="{x:Bind ViewModel.TFELPanelGrid, Mode=TwoWay}" />
+                <muxc:NumberBox x:Uid="TFELPanelGridInput" Minimum="0" Maximum="0.15" SmallChange="0.01" Tag="TFELPanelGrid" Value="{x:Bind ViewModel.TFELPanelGrid, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+            </StackPanel>
+        </local:SettingsCard>
+        <TextBlock x:Uid="TFELCalibrationHelp" TextWrapping="Wrap" />
         <local:SettingsCard x:Uid="TFELPresetCard">
             <StackPanel Spacing="8">
                 <TextBlock Text="{x:Bind ViewModel.TFELCurrentPresetStatus, Mode=OneWay}" MaxWidth="300" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />

@@ -18,8 +18,8 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         // Tone[0..3], Bloom[4..7], phosphor RGB[8..10], hue/saturation[11..12],
-        // glow hue/saturation/mix[13..15]. Keep ControlCore::PreviewTFEL in sync.
-        using Values = std::array<float, 16>;
+        // glow hue/saturation/mix[13..15], render mode[16], panel grid[17]. Keep ControlCore::PreviewTFEL in sync.
+        using Values = std::array<float, 18>;
         using Snapshot = std::map<winrt::guid, Values>;
 
         static uint64_t Begin()

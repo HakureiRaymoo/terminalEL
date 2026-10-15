@@ -35,6 +35,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RECT GetCursorPosition() override;
         void HandleOutput(std::wstring_view text) override;
         ::Microsoft::Console::Render::Renderer* GetRenderer() override;
+        bool BeginCandidateUI() override;
+        bool CandidateUIEnabled() noexcept override;
+        bool UpdateCandidateUI(const ::Microsoft::Console::TSF::CandidatePage& page) override;
+        bool RefreshCandidateLayout() override;
+        void EndCandidateUI() override;
 
     private:
         ControlCore* _getCore() const noexcept;
@@ -305,6 +310,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
+        std::optional<SafeDispatcherTimer> _candidateTimer;
+        std::optional<::Microsoft::Console::TSF::CandidatePage> _candidatePage;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;

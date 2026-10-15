@@ -30,8 +30,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     static std::array<float, 16> readTFELPresetValues(const Windows::Data::Json::JsonObject& settings)
     {
-        if (settings.GetNamedString(L"terminalEL.colorMode") != L"monochrome")
-            throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        const auto mode = settings.GetNamedString(L"terminalEL.colorMode");
+        if (mode != L"monochrome" && mode != L"native" && mode != L"native-tinted" && mode != L"native-hybrid")
+            throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
         std::array<float, 16> values;
         for (size_t i = 0; i < values.size(); ++i)
         {
@@ -43,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return values;
     }
 
-    static Windows::Data::Json::JsonObject serializeTFELPreset(const hstring& name, const std::array<float, 16>& values)
+    static Windows::Data::Json::JsonObject serializeTFELPreset(const hstring& name, const std::array<float, 16>& values, const hstring& mode = L"monochrome")
     {
         using namespace Windows::Data::Json;
         validateTFELPresetValues(values);
@@ -52,10 +53,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             settings.Insert(hstring{ TFELPresetKeys[i] }, JsonValue::CreateNumberValue(values[i]));
         }
-        settings.Insert(L"terminalEL.colorMode", JsonValue::CreateStringValue(L"monochrome"));
+        settings.Insert(L"terminalEL.colorMode", JsonValue::CreateStringValue(mode));
         JsonObject result;
         result.Insert(L"version", JsonValue::CreateNumberValue(1));
-        result.Insert(L"renderer", JsonValue::CreateStringValue(L"tfel-v1"));
+        result.Insert(L"renderer", JsonValue::CreateStringValue(mode == L"monochrome" ? L"tfel-v1" : L"native-el-v1"));
         result.Insert(L"name", JsonValue::CreateStringValue(name));
         result.Insert(L"settings", settings);
         return result;
@@ -75,10 +76,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             try
             {
                 const auto obj = presets.GetAt(storageIndex).GetObject();
-                if (obj.GetNamedNumber(L"version") != 1 || obj.GetNamedString(L"renderer") != L"tfel-v1") continue;
+                if (obj.GetNamedNumber(L"version") != 1) continue;
                 UserTFELPreset preset{ obj.GetNamedString(L"name"), {}, storageIndex };
                 if (preset.name.empty()) continue;
                 preset.values = readTFELPresetValues(obj.GetNamedObject(L"settings"));
+                preset.mode = obj.GetNamedObject(L"settings").GetNamedString(L"terminalEL.colorMode");
+                if (obj.GetNamedString(L"renderer") != (preset.mode == L"monochrome" ? L"tfel-v1" : L"native-el-v1")) continue;
                 _userTFELPresets.push_back(std::move(preset));
             }
             CATCH_LOG();
@@ -112,14 +115,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto cleanName = _ValidateTFELName(name);
         const auto values = _CurrentTFELValues();
         validateTFELPresetValues(values);
-        if (TFELColorMode() != L"monochrome") throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        if (TFELColorMode() != L"monochrome" && TFELColorMode() != L"native" && TFELColorMode() != L"native-tinted" && TFELColorMode() != L"native-hybrid") throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
         // Append to the original array so unknown future versions are preserved.
         JsonArray presets;
         if (!JsonArray::TryParse(_GlobalSettings.TFELUserPresets(), presets))
             throw hresult_invalid_argument(RS_(L"TFELInvalidLibrary"));
-        presets.Append(serializeTFELPreset(cleanName, values));
+        presets.Append(serializeTFELPreset(cleanName, values, TFELColorMode()));
         _GlobalSettings.TFELUserPresets(presets.Stringify());
-        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1 });
+        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1, TFELColorMode() });
         _NotifyChanges(L"TFELCurrentPresetStatus");
         return static_cast<int32_t>(TFELBuiltinPresets.size() + _userTFELPresets.size() - 1);
     }
@@ -135,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         if (i - TFELBuiltinPresets.size() >= _userTFELPresets.size()) throw hresult_invalid_argument();
         const auto& preset = _userTFELPresets[i - TFELBuiltinPresets.size()];
-        return serializeTFELPreset(preset.name, preset.values).Stringify();
+        return serializeTFELPreset(preset.name, preset.values, preset.mode).Stringify();
     }
 
     size_t GlobalAppearanceViewModel::_UserTFELIndex(int32_t index) const
@@ -187,15 +190,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (!std::isfinite(values[i]) || std::abs(values[i] - preset.values[i]) > 0.00001f) return false;
             }
-            return TFELColorMode() == L"monochrome";
+            return true;
         };
         std::wstring names;
         const auto append = [&](const std::wstring_view name) {
             if (!names.empty()) names += L" / ";
             names += name;
         };
-        for (const auto& preset : TFELBuiltinPresets) if (matches(preset)) append(preset.name);
-        for (const auto& preset : _userTFELPresets) if (matches(preset)) append(preset.name);
+        for (const auto& preset : TFELBuiltinPresets) if (TFELColorMode() == L"monochrome" && matches(preset)) append(preset.name);
+        for (const auto& preset : _userTFELPresets) if (TFELColorMode() == preset.mode && matches(preset)) append(preset.name);
         if (names.empty()) return RS_(L"TFELStatusCustom");
         return hstring{ std::wstring{ RS_(L"TFELStatusMatches") } + names };
     }
@@ -206,15 +209,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto i = _UserTFELIndex(index);
         const auto values = _CurrentTFELValues();
         validateTFELPresetValues(values);
-        if (TFELColorMode() != L"monochrome") throw hresult_invalid_argument(RS_(L"TFELMonochromeOnly"));
+        if (TFELColorMode() != L"monochrome" && TFELColorMode() != L"native" && TFELColorMode() != L"native-tinted" && TFELColorMode() != L"native-hybrid") throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
         auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
         const auto obj = presets.GetAt(_userTFELPresets[i].storageIndex).GetObject();
         const auto settings = obj.GetNamedObject(L"settings");
+        settings.Insert(L"terminalEL.colorMode", JsonValue::CreateStringValue(TFELColorMode()));
+        obj.Insert(L"renderer", JsonValue::CreateStringValue(TFELColorMode() == L"monochrome" ? L"tfel-v1" : L"native-el-v1"));
         // Update only known parameters, retaining unknown metadata and array entries.
         for (size_t n = 0; n < values.size(); ++n)
             settings.Insert(hstring{ TFELPresetKeys[n] }, JsonValue::CreateNumberValue(values[n]));
         _GlobalSettings.TFELUserPresets(presets.Stringify());
         _userTFELPresets[i].values = values;
+        _userTFELPresets[i].mode = TFELColorMode();
         _NotifyChanges(L"TFELCurrentPresetStatus");
     }
 
@@ -223,15 +229,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         using namespace Windows::Data::Json;
         if (json.size() > 65536) throw hresult_invalid_argument(RS_(L"TFELTextTooLarge"));
         const auto obj = JsonObject::Parse(json);
-        if (obj.GetNamedNumber(L"version") != 1 || obj.GetNamedString(L"renderer") != L"tfel-v1")
+        if (obj.GetNamedNumber(L"version") != 1)
             throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
         const auto cleanName = _ValidateTFELName(name.empty() ? obj.GetNamedString(L"name") : name);
         const auto values = readTFELPresetValues(obj.GetNamedObject(L"settings"));
+        const auto mode = obj.GetNamedObject(L"settings").GetNamedString(L"terminalEL.colorMode");
+        if (obj.GetNamedString(L"renderer") != (mode == L"monochrome" ? L"tfel-v1" : L"native-el-v1"))
+            throw hresult_invalid_argument(RS_(L"TFELUnsupportedVersion"));
         // Validate completely before touching the library or current effect.
         auto presets = JsonArray::Parse(_GlobalSettings.TFELUserPresets());
-        presets.Append(serializeTFELPreset(cleanName, values));
+        presets.Append(serializeTFELPreset(cleanName, values, mode));
         _GlobalSettings.TFELUserPresets(presets.Stringify());
-        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1 });
+        _userTFELPresets.push_back({ cleanName, values, presets.Size() - 1, mode });
         _NotifyChanges(L"TFELCurrentPresetStatus");
         return static_cast<int32_t>(TFELBuiltinPresets.size() + _userTFELPresets.size() - 1);
     }
@@ -276,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TFELGlowHue(v[13]);
         TFELGlowSaturation(v[14]);
         TFELGlowMix(v[15]);
-        TFELColorMode(L"monochrome");
+        TFELColorMode(i < TFELBuiltinPresets.size() ? hstring{ L"monochrome" } : _userTFELPresets[i - TFELBuiltinPresets.size()].mode);
     }
 
     constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -298,7 +307,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged([this](const auto&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
             const auto propertyName = args.PropertyName();
             const std::wstring_view name{ propertyName };
-            if (name.substr(0, 4) == L"TFEL" && name != L"TFELCurrentPresetStatus")
+            if (name == L"TFELColorMode") _NotifyChanges(L"TFELModeIndex");
+            if (IsTFELPreviewProperty(name))
                 _NotifyChanges(L"TFELCurrentPresetStatus");
         });
     }

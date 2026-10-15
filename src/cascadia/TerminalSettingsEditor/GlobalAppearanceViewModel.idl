@@ -40,6 +40,9 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELContrast);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELBlackLevel);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELGamma);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPanelGrid);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IMECandidateOverlay);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IMECandidateGlow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorRed);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorGreen);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Single, TFELPhosphorBlue);
@@ -63,5 +66,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void DeleteTFELPreset(Int32 index);
         void UpdateTFELPreset(Int32 index);
         String TFELCurrentPresetStatus { get; };
+        Int32 TFELModeIndex;
     }
 }

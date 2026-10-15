@@ -94,6 +94,9 @@
     X(float, TFELContrast, 1.0f)                                                                                                                          \
     X(float, TFELBlackLevel, 0.0f)                                                                                                                        \
     X(float, TFELGamma, 1.0f)                                                                                                                             \
+    X(bool, IMECandidateGlow, false)                                                                                                                      \
+    X(bool, IMECandidateOverlay, false)                                                                                                                   \
+    X(float, TFELPanelGrid, 0.0f)                                                                                                                         \
     X(float, TFELPhosphorRed, 1.0f)                                                                                                                       \
     X(float, TFELPhosphorGreen, 0.82f)                                                                                                                    \
     X(float, TFELPhosphorBlue, 0.04f)                                                                                                                     \

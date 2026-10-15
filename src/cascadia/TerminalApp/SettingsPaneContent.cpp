@@ -69,7 +69,9 @@ namespace winrt::TerminalApp::implementation
                 RESOLVE_TFEL(TFELBloomRadius), RESOLVE_TFEL(TFELBloomSoftness),
                 RESOLVE_TFEL(TFELPhosphorRed), RESOLVE_TFEL(TFELPhosphorGreen), RESOLVE_TFEL(TFELPhosphorBlue),
                 RESOLVE_TFEL(TFELHue), RESOLVE_TFEL(TFELSaturation),
-                RESOLVE_TFEL(TFELGlowHue), RESOLVE_TFEL(TFELGlowSaturation), RESOLVE_TFEL(TFELGlowMix) });
+                RESOLVE_TFEL(TFELGlowHue), RESOLVE_TFEL(TFELGlowSaturation), RESOLVE_TFEL(TFELGlowMix),
+                RESOLVE_TFEL(TFELColorMode) == L"native" ? 1.0f : RESOLVE_TFEL(TFELColorMode) == L"native-tinted" ? 2.0f : RESOLVE_TFEL(TFELColorMode) == L"native-hybrid" ? 3.0f : 0.0f,
+                RESOLVE_TFEL(TFELPanelGrid) });
 #undef RESOLVE_TFEL
         }
         TFELPreview::Update(_tfelSession, std::move(snapshot), saved);

@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <string>
+#include <cstdint>
+#include <vector>
+
 namespace Microsoft::Console::Render
 {
     class Renderer;
@@ -11,6 +15,16 @@ namespace Microsoft::Console::Render
 namespace Microsoft::Console::TSF
 {
     struct Implementation;
+
+    struct CandidatePage
+    {
+        std::vector<std::wstring> entries;
+        UINT selection = 0; // Relative to this page.
+        UINT page = 0;
+        UINT pages = 0;
+        UINT first = 0;
+        uint64_t revision = 0;
+    };
 
     // It is fine for any of the IDataProvider functions to throw.
     // However, this doesn't apply to the IUnknown ones.
@@ -25,6 +39,12 @@ namespace Microsoft::Console::TSF
         virtual RECT GetCursorPosition() = 0;
         virtual void HandleOutput(std::wstring_view text) = 0;
         virtual Render::Renderer* GetRenderer() = 0;
+        // Optional XAML-host extension. Other hosts keep the system candidate UI.
+        virtual bool BeginCandidateUI() { return false; }
+        virtual bool CandidateUIEnabled() noexcept { return false; }
+        virtual bool UpdateCandidateUI(const CandidatePage&) { return false; }
+        virtual bool RefreshCandidateLayout() { return false; }
+        virtual void EndCandidateUI() {}
     };
 
     // A pimpl idiom wrapper for `Implementation` so that we don't pull in all the TSF headers everywhere.
@@ -50,6 +70,9 @@ namespace Microsoft::Console::TSF
         void Unfocus(IDataProvider* provider) const;
         bool HasActiveComposition() const noexcept;
         void FlushPendingComposition() const noexcept;
+        void EnableCandidateProbe() const noexcept;
+        void RefreshCandidateUI(IDataProvider* provider) const noexcept;
+        void SelectCandidate(IDataProvider* provider, uint64_t revision, UINT index) const noexcept;
 
     private:
         void _destroy() noexcept;

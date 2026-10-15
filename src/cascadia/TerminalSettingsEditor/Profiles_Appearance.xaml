@@ -62,6 +62,18 @@
         <StackPanel Grid.Row="1"
                     Margin="0,12,0,0"
                     Style="{StaticResource SettingsStackStyle}">
+            <local:SettingsCard x:Name="IMECandidateOverlay" x:Uid="IMECandidateOverlayCard">
+                <StackPanel Orientation="Horizontal">
+                    <ToggleSwitch x:Uid="IMECandidateOverlaySwitch" IsOn="{x:Bind Profile.IMECandidateOverlay, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="IMECandidateOverlay" Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
+            <local:SettingsCard x:Name="IMECandidateGlow" x:Uid="IMECandidateGlowCard">
+                <StackPanel Orientation="Horizontal">
+                    <ToggleSwitch x:Uid="IMECandidateGlowSwitch" IsOn="{x:Bind Profile.IMECandidateGlow, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="IMECandidateGlow" Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
             <!--  Control Preview  -->
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="0,0,0,32"
@@ -83,6 +95,28 @@
             <TextBlock x:Uid="Globals_Section_TerminalEL"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <TextBlock x:Uid="TFELProfileInheritance" TextWrapping="Wrap" />
+            <TextBlock x:Uid="TFELHybridHelp" TextWrapping="Wrap" />
+            <local:SettingsCard x:Name="TFELColorMode" x:Uid="TFELModeCard">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox SelectedIndex="{x:Bind Profile.TFELModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="TFELModeMono" />
+                        <ComboBoxItem x:Uid="TFELModeNative" />
+                        <ComboBoxItem x:Uid="TFELModeTinted" />
+                        <ComboBoxItem x:Uid="TFELModeHybrid" />
+                    </ComboBox>
+                    <local:SettingResetButton SettingName="TFELColorMode" Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
+            <local:SettingsCard x:Name="TFELPanelGrid" x:Uid="TFELPanelGridCard">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <StackPanel Width="240">
+                        <Slider x:Uid="TFELPanelGridInput" Minimum="0" Maximum="0.15" StepFrequency="0.01" Value="{x:Bind Profile.TFELPanelGrid, Mode=TwoWay}" />
+                        <muxc:NumberBox x:Uid="TFELPanelGridInput" Minimum="0" Maximum="0.15" SmallChange="0.01" Tag="TFELPanelGrid" Value="{x:Bind Profile.TFELPanelGrid, Mode=OneWay}" ValueChanged="TFELNumber_ValueChanged" />
+                    </StackPanel>
+                    <local:SettingResetButton SettingName="TFELPanelGrid" Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
+            <TextBlock x:Uid="TFELCalibrationHelp" TextWrapping="Wrap" />
             <local:SettingsExpander x:Name="TerminalELColor" x:Uid="TFELColor">
                 <local:SettingsExpander.Items>
                     <local:SettingsCard x:Name="TFELHue" x:Uid="TFELHueCard">

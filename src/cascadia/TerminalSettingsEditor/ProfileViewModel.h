@@ -172,11 +172,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #undef PROFILE_GEN_PROJECTED
 
         // TFEL falls back to the global value only after exhausting profile inheritance.
+        bool IMECandidateOverlay() const
+        {
+            return (_profile.HasIMECandidateOverlay() || _profile.IMECandidateOverlayOverrideSource()) ?
+                _profile.IMECandidateOverlay() : _appSettings.GlobalSettings().IMECandidateOverlay();
+        }
+        bool IMECandidateGlow() const
+        {
+            return (_profile.HasIMECandidateGlow() || _profile.IMECandidateGlowOverrideSource()) ?
+                _profile.IMECandidateGlow() : _appSettings.GlobalSettings().IMECandidateGlow();
+        }
+        void IMECandidateGlow(bool value)
+        {
+            _profile.IMECandidateGlow(value);
+            _NotifyChanges(L"HasIMECandidateGlow", L"IMECandidateGlow");
+        }
+        bool HasIMECandidateGlow() const { return _profile.HasIMECandidateGlow(); }
+        void ClearIMECandidateGlow()
+        {
+            _profile.ClearIMECandidateGlow();
+            _NotifyChanges(L"HasIMECandidateGlow", L"IMECandidateGlow");
+        }
+        Windows::Foundation::IInspectable IMECandidateGlowOverrideSource() const
+        {
+            if (const auto source = _profile.IMECandidateGlowOverrideSource()) return source;
+            return _appSettings.GlobalSettings();
+        }
+        void IMECandidateOverlay(bool value)
+        {
+            _profile.IMECandidateOverlay(value);
+            _NotifyChanges(L"HasIMECandidateOverlay", L"IMECandidateOverlay");
+        }
+        bool HasIMECandidateOverlay() const { return _profile.HasIMECandidateOverlay(); }
+        void ClearIMECandidateOverlay()
+        {
+            _profile.ClearIMECandidateOverlay();
+            _NotifyChanges(L"HasIMECandidateOverlay", L"IMECandidateOverlay");
+        }
+        Windows::Foundation::IInspectable IMECandidateOverlayOverrideSource() const
+        {
+            if (const auto source = _profile.IMECandidateOverlayOverrideSource()) return source;
+            return _appSettings.GlobalSettings();
+        }
+
 #define PROFILE_TFEL_SETTINGS(X) \
     X(TFELBrightness)            \
     X(TFELContrast)              \
     X(TFELBlackLevel)            \
     X(TFELGamma)                 \
+    X(TFELPanelGrid)             \
     X(TFELBloomIntensity)        \
     X(TFELBloomThreshold)        \
     X(TFELBloomRadius)           \
@@ -225,6 +269,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PROFILE_TFEL_SETTINGS(PROFILE_GEN_TFEL)
 #undef PROFILE_GEN_TFEL
         bool TFELIndependentGlow() const { return TFELGlowMix() > 0.0f; }
+        hstring TFELColorMode() const
+        {
+            return (_profile.HasTFELColorMode() || _profile.TFELColorModeOverrideSource()) ? _profile.TFELColorMode() : _appSettings.GlobalSettings().TFELColorMode();
+        }
+        bool HasTFELColorMode() const { return _profile.HasTFELColorMode(); }
+        void TFELColorMode(const hstring& value)
+        {
+            if (TFELColorMode() != value)
+            {
+                _profile.TFELColorMode(value);
+                _NotifyChanges(L"HasTFELColorMode", L"TFELColorMode", L"TFELModeIndex");
+            }
+        }
+        void ClearTFELColorMode()
+        {
+            if (_profile.HasTFELColorMode())
+            {
+                _profile.ClearTFELColorMode();
+                _NotifyChanges(L"HasTFELColorMode", L"TFELColorMode", L"TFELModeIndex");
+            }
+        }
+        Windows::Foundation::IInspectable TFELColorModeOverrideSource() const
+        {
+            if (const auto source = _profile.TFELColorModeOverrideSource()) return source;
+            return _appSettings.GlobalSettings();
+        }
+        int32_t TFELModeIndex() const { return TFELColorMode() == L"native" ? 1 : TFELColorMode() == L"native-tinted" ? 2 : TFELColorMode() == L"native-hybrid" ? 3 : 0; }
+        void TFELModeIndex(int32_t value)
+        {
+            if (value >= 0 && value <= 3) TFELColorMode(value == 1 ? L"native" : value == 2 ? L"native-tinted" : value == 3 ? L"native-hybrid" : L"monochrome");
+        }
         void TFELIndependentGlow(bool value) { TFELGlowMix(value ? 1.0f : 0.0f); }
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);

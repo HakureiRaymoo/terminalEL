@@ -2958,4 +2958,21 @@
   <data name="TFELMonochromeOnly" xml:space="preserve"><value>当前渲染器仅支持单色预设。</value></data>
   <data name="TFELInvalidRange" xml:space="preserve"><value>预设参数必须是支持范围内的有限数值。</value></data>
   <data name="TFELProfileInheritance.Text" xml:space="preserve"><value>参数优先继承父级配置文件，最后回退到全局 EL 设置。每项重置仅清除当前层覆盖。独立辉光开关与混合比例共用一项设置，重置任一项都会恢复继承的混合比例。点击“保存”保留修改。</value></data>
+  <data name="TFELModeCard.Header" xml:space="preserve"><value>EL 渲染模式</value></data>
+  <data name="TFELModeCard.Description" xml:space="preserve"><value>原生彩色保留来源色相，亮度、对比度、黑电平和伽马同时影响画面与辉光输入。核心色彩参数仅用于单色模式。辉光也会作用于亮背景和选区。统一辉光模式使用辉光色相、饱和度及混合比例。</value></data>
+  <data name="TFELModeMono.Content" xml:space="preserve"><value>TFEL 单色 v1</value></data>
+  <data name="TFELModeNative.Content" xml:space="preserve"><value>原生彩色 + 跟随颜色辉光</value></data>
+  <data name="TFELModeTinted.Content" xml:space="preserve"><value>原生彩色 + 统一辉光颜色</value></data>
+  <data name="TFELModeHybrid.Content" xml:space="preserve"><value>原生彩色 + 中性色磷光</value></data>
+  <data name="TFELHybridHelp.Text" xml:space="preserve"><value>混合模式把近灰色像素映射为单色核心色和独立辉光色（默认黄色／橘红色）；彩色保留自身颜色与辉光。灰色背景也可能被映射。此模式不使用独立辉光开关及混合比例。</value></data>
+  <data name="TFELPanelGridCard.Header" xml:space="preserve"><value>可选面板网格（v1）</value></data>
+  <data name="TFELPanelGridCard.Description" xml:space="preserve"><value>仅原生色系列模式生效。0 为关闭，最高 0.15 轻微调暗静态像素分隔线。独立于颜色预设；单色模式忽略此项。</value></data>
+  <data name="TFELPanelGridInput.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>面板网格衰减强度</value></data>
+  <data name="TFELCalibrationHelp.Text" xml:space="preserve"><value>目视校准：在此终端运行 tools/Show-TerminalELColors.ps1 -Page Calibration，依次调整色调、辉光、可选网格。这是目视辅助，不是显示器色彩管理。</value></data>
+  <data name="IMECandidateOverlayCard.Header" xml:space="preserve"><value>终端风格输入法候选框</value></data>
+  <data name="IMECandidateOverlayCard.Description" xml:space="preserve"><value>使用匹配终端外观的键盘选词浮层，不支持的情况使用系统界面。保存后生效；开启时从下一次候选会话开始使用。</value></data>
+  <data name="IMECandidateOverlaySwitch.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>终端风格输入法候选框</value></data>
+  <data name="IMECandidateGlowCard.Header" xml:space="preserve"><value>候选框柔光</value></data>
+  <data name="IMECandidateGlowCard.Description" xml:space="preserve"><value>为终端风格输入法候选框添加文字及内外边缘柔光。需要开启终端风格候选框，高对比度模式下不显示柔光。</value></data>
+  <data name="IMECandidateGlowSwitch.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>候选框柔光</value></data>
 </root>

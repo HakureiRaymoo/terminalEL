@@ -1365,6 +1365,27 @@
 
         </Grid>
 
+        <!-- Non-focusable, pane-local IME presentation. Keyboard stays with TSF. -->
+        <Canvas>
+            <Grid x:Name="CandidateGlow" IsHitTestVisible="False" Visibility="Collapsed">
+                <Border x:Name="CandidateGlowOuter" BorderThickness="2" Opacity="0.04" />
+                <Border x:Name="CandidateGlowMiddle" Margin="2" BorderThickness="2" Opacity="0.08" />
+                <Border x:Name="CandidateGlowInner" Margin="4" BorderThickness="2" Opacity="0.16" />
+            </Grid>
+            <Border x:Name="CandidateBorder"
+                    Padding="6"
+                    BorderThickness="1"
+                    Visibility="Collapsed">
+                <Grid>
+                    <Grid x:Name="CandidateInnerGlow" Margin="-6" IsHitTestVisible="False" Visibility="Collapsed">
+                        <Border x:Name="CandidateInnerGlowNear" BorderThickness="2" Opacity="0.28" />
+                        <Border x:Name="CandidateInnerGlowFar" Margin="2" BorderThickness="3" Opacity="0.12" />
+                    </Grid>
+                    <StackPanel x:Name="CandidateRows" />
+                </Grid>
+            </Border>
+        </Canvas>
+
         <!--  Resize overlay: shows columns x rows when terminal is resized  -->
         <Border x:Name="ResizeOverlay"
                 Padding="16,8,16,8"
