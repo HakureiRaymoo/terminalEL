@@ -1,0 +1,23 @@
+{
+    "name": "EL Amber Code - Campbell Cursor",
+    "background": "#080B0F",
+    "foreground": "#C8C8C8",
+    "cursorColor": "#FFFFFF",
+    "selectionBackground": "#FFFFFF",
+    "black": "#263344",
+    "red": "#F06478",
+    "green": "#41C997",
+    "yellow": "#DE983C",
+    "blue": "#639FEF",
+    "purple": "#BC87EC",
+    "cyan": "#38BCCF",
+    "white": "#C8C8C8",
+    "brightBlack": "#829BBE",
+    "brightRed": "#FF8494",
+    "brightGreen": "#70E3B1",
+    "brightYellow": "#FFD16B",
+    "brightBlue": "#91BDFF",
+    "brightPurple": "#D8ADFF",
+    "brightCyan": "#83E8F4",
+    "brightWhite": "#EEEEEE"
+}

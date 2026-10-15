@@ -1,0 +1,282 @@
+[
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "AGENTS.md",
+    "bytes": 3133,
+    "sha256": "e824f60a62e55275a0191cf9750be1612dfe08dfffc3c236a22cd04f93c4edbb"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "LICENSE",
+    "bytes": 1116,
+    "sha256": "5d177f23ecfeb0ea8e050b6a5a16355e1ae9a0b286436ca8f83ed08b3795be6b"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "NOTICE.md",
+    "bytes": 23176,
+    "sha256": "e7fbaadee6ab20c28b87730a510ee5f5815d8fb4bd88d1d54d282dc2a74c0726"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "README.md",
+    "bytes": 23780,
+    "sha256": "1cb415f46953bb1e9042f53ec20219ecdff0cd98402eba1ffe6cf351ba4c3b99"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "doc/terminalEL-foundation-v1.md",
+    "bytes": 7621,
+    "sha256": "e132f4baf8a1dbbaba5f07333792ad73bb2622da094b098df32e3c9057dc51e4"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "doc/terminalEL-review-2026-10-12.md",
+    "bytes": 7760,
+    "sha256": "9f86a25bf0c7452d654fd2c11bdf67706efd3da2859b3affcf8727fa451f5012"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "doc/terminalEL-status.md",
+    "bytes": 9400,
+    "sha256": "ee0fc6e3921fd8f2914fd45cece1e495ca85e28cf136aab68827854ea31403c7"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "tools/Build-TerminalEL.ps1",
+    "bytes": 5768,
+    "sha256": "4699000f8478f599a8888032c708599d177a2b5362a36af2062982bbc50e383b"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "tools/Test-TerminalELFoundation.py",
+    "bytes": 2362,
+    "sha256": "15050c91641f0c511fe2d310b838132630eaa3dd9e03a78efec64fb66dc3b03f"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "tools/Test-TerminalELPrerequisites.ps1",
+    "bytes": 4498,
+    "sha256": "4a3e6fb3b4bf87b0dc10be951f1cb1e3a86571164da9dce526a1e8e3463a368a"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "tools/Test-TerminalELProjectGraph.py",
+    "bytes": 1208,
+    "sha256": "2bbb3e4a02c6c660049428223dc770e8b64aba7e53014468a5e1a9c962178d23"
+  },
+  {
+    "snapshot": "main",
+    "sourceCommit": "f7e0f59dc6acf4beed788be066721bfd01e964db",
+    "path": "tools/Test-TerminalELUI.py",
+    "bytes": 3682,
+    "sha256": "09ce9d6c753f32618b9b2b14ebbfffb12943879f4f52f0ab7536e2029a4f78c1"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "AGENTS.md",
+    "bytes": 3133,
+    "sha256": "e824f60a62e55275a0191cf9750be1612dfe08dfffc3c236a22cd04f93c4edbb"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "LICENSE",
+    "bytes": 1116,
+    "sha256": "5d177f23ecfeb0ea8e050b6a5a16355e1ae9a0b286436ca8f83ed08b3795be6b"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "NOTICE.md",
+    "bytes": 23176,
+    "sha256": "e7fbaadee6ab20c28b87730a510ee5f5815d8fb4bd88d1d54d282dc2a74c0726"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "README.md",
+    "bytes": 28527,
+    "sha256": "1b6e800c6b517cf23e7e09678890104b5a6eda1afddbd2f6c2bb664499c448c8"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/EL-Amber-Code-Campbell-Cursor.json",
+    "bytes": 604,
+    "sha256": "f6b75650f3a87726aafbe84a2039c8a061a69c9cbf173ea9dcafe593d44dc909"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/EL-Amber-Code.json",
+    "bytes": 586,
+    "sha256": "f8e0868adf2ed79d07b548988f07c35b181cac35c284ff859074a3947fdcd48d"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-foundation-v1.md",
+    "bytes": 7980,
+    "sha256": "9ec6f32b8aea6f4175bdbc937a26197b4f19bb3c1668946d6cb6609677dd337c"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-handoff.md",
+    "bytes": 25522,
+    "sha256": "e8f8e2da2e1da0a89ee1b41cc772efe7c4443b6751d257e75dba808c15f54325"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-ime-acceptance.md",
+    "bytes": 4842,
+    "sha256": "00ac159130679774905181f045f3335d72762e86de371c9fd630e9c4f47bc53c"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-ime-overlay.md",
+    "bytes": 10941,
+    "sha256": "3fd5ba4dec3382802db80fb686a8e4aabcae73d822bd5386ba28d44c3f7abb8a"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-ime-probe.md",
+    "bytes": 7629,
+    "sha256": "71ae43e1cce811367d59e53c6320a5610630819094d7b6166db0d139b70c8696"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-native-color.md",
+    "bytes": 8104,
+    "sha256": "dc644e353ede949e10686623aa2f7b0fb9515038614b0daae42d1e7540d35fd8"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-panel-calibration.md",
+    "bytes": 6638,
+    "sha256": "813053323030bd6e86f9be7715ac94052902885fabfb0d363b71db8f915c6003"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-release-notes.md",
+    "bytes": 3084,
+    "sha256": "c613e2d46da0114eb91d7fa5f3192133a8053c8277844c5919164dae4202f86d"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-release.md",
+    "bytes": 6703,
+    "sha256": "366b1e629326cff616b8b8548ce64c073cb181efb59d7ff882b8aac25ef29dd6"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-review-2026-10-12.md",
+    "bytes": 7760,
+    "sha256": "9f86a25bf0c7452d654fd2c11bdf67706efd3da2859b3affcf8727fa451f5012"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "doc/terminalEL-status.md",
+    "bytes": 10623,
+    "sha256": "5259c2c1c4dd6d0ee40c2a3d872e590ce9a499160ef99537cc3bbbdfef6c2912"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Build-TerminalEL.ps1",
+    "bytes": 5768,
+    "sha256": "4699000f8478f599a8888032c708599d177a2b5362a36af2062982bbc50e383b"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Package-TerminalEL.ps1",
+    "bytes": 4647,
+    "sha256": "c5eb69eb4ed35ef365b52fb03d7e09934f8b4ce0ac70300904c526d2f99f5c7c"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Show-TerminalELColors.ps1",
+    "bytes": 8383,
+    "sha256": "dfa0f5c619ab7a8a580b6b9913e6d3ceeaee5fd840f324a497062df93a2c1b3b"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/TerminalEL-Setup.iss",
+    "bytes": 1797,
+    "sha256": "19686d899b9aff65095a0408e7dcaf534c5339c51d716fe53a59eac327b27942"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELColorScheme.py",
+    "bytes": 742,
+    "sha256": "478f93d20595c33e5b049bfa7a28d4c6876e557d99d6db8058b0ce2ce2a762cc"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELFoundation.py",
+    "bytes": 2362,
+    "sha256": "15050c91641f0c511fe2d310b838132630eaa3dd9e03a78efec64fb66dc3b03f"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELNative.py",
+    "bytes": 5441,
+    "sha256": "ea87ca47cfb88f411850ffa778347aba2dd5c0ae2df448854241e889e136a516"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELPanel.py",
+    "bytes": 3417,
+    "sha256": "43a33155d332b5165c4dd7fd9fe832a00b3387b32bcae8d3601bda6a73ee144a"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELPrerequisites.ps1",
+    "bytes": 4498,
+    "sha256": "4a3e6fb3b4bf87b0dc10be951f1cb1e3a86571164da9dce526a1e8e3463a368a"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELProjectGraph.py",
+    "bytes": 1208,
+    "sha256": "2bbb3e4a02c6c660049428223dc770e8b64aba7e53014468a5e1a9c962178d23"
+  },
+  {
+    "snapshot": "ime-adaptation",
+    "sourceCommit": "d555f13c6e0c02afad07b2137f7374ffd3579cc7",
+    "path": "tools/Test-TerminalELUI.py",
+    "bytes": 4298,
+    "sha256": "e771c416a641f34e1e6264c6727a639312ba27a5b5a75f10c171ba5e02c39c31"
+  }
+]
