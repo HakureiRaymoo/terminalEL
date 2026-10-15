@@ -2,6 +2,113 @@
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
 
+# TerminalEL
+
+**让终端文字具有清晰、温暖的电致发光质感。**
+
+TerminalEL 是基于 [Windows Terminal](https://github.com/microsoft/terminal) 的显示效果
+实验 fork，受到薄膜电致发光显示屏（TFEL）视觉风格的启发。在保留标签页、分屏和
+原有命令行使用方式的基础上，为终端增加可调的单色核心与外围辉光。
+
+本页介绍 `main` 分支已有的 **Foundation v1 单色显示系统**。目标是在明亮清晰的
+文字核心周围呈现较暗、连续的光晕，兼顾视觉风格和文字可读性。
+
+## 相比 Windows Terminal 新增了什么？
+
+### 集成式 EL 显示渲染
+
+在原生 Atlas / Direct3D 11 渲染链路中增加后处理：
+
+```text
+终端画面 → 亮度与色调处理 → 发光提取 → 半分辨率模糊 → 核心与辉光着色合成
+```
+
+- **Tone**：调整亮度、对比度、黑位和 Gamma。
+- **文字核心**：调整核心 RGB、色相偏移与饱和度。
+- **Bloom**：调整辉光强度、阈值、半径与柔和度。
+- **独立辉光颜色**：设置辉光色相、饱和度及与核心颜色的混合比例。
+- **核心保护**：抑制高亮核心上的额外光晕，配合柔和限幅，减少糊字和笔画增粗。
+
+例如，可以让核心呈明亮琥珀黄，而外围呈橙红光晕。当前 main 使用单色亮度映射，
+并不保留原始 ANSI/True Color 的全部色相。
+
+Windows Terminal 本身已有配色、透明度及自定义着色器等能力；本项目新增的是
+这套具体的 EL 渲染算法及其配套设置、预设和实时调整流程。
+
+### 外观设置与配置继承
+
+- 全局默认、`profiles.defaults` 及 Profile 独立覆盖。
+- Profile 逐项 Reset，清除本层覆盖并恢复继承。
+- Tone/Bloom 滑块及颜色控制；全局提供滑块与精确数值输入。
+- 同一进程内跨窗口的参数实时预览。
+- Save 保存设置；Reset 或关闭未保存设置页撤销相应调整。
+- 英文与简体中文资源。
+
+### 内置与自定义预设
+
+内置 **Foundation v1、Classic amber v1、Soft gold v1、Green phosphor v1**。
+支持自定义预设的新建、更新、重命名、删除、导入和导出，以及当前全局参数的
+预设匹配状态提示。
+
+Foundation v1 保留经过维护者认可的固定参数与渲染路径，作为可恢复的视觉基线。
+选择预设名称不会自动应用；需显式 Apply，再通过 Save 持久保存。
+应用全局预设不清除 Profile 已有覆盖。
+
+## 当前范围与已知边界
+
+`main` 是单色 Foundation 基线，本文不将其他分支的功能视作 main 已包含的能力。
+
+- EL 效果目前位于 Direct3D 渲染路径；Direct2D 路径不呈现该效果。
+- 自定义像素着色器和 Retro 路径优先，不与当前 EL 管线叠加。
+- 单色合成输出 alpha 为 1；透明背景、背景图及特殊选区需要专项验证。
+- 预览只覆盖同一进程，多设置页同时编辑使用完整快照，不做逐字段合并。
+- 已有维护者本地视觉验收；不同 GPU、字体、DPI 和布局仍需扩大测试覆盖，
+  不宣称量化性能提升或对实际 TFEL 硬件的物理精确模拟。
+
+## 本地构建与运行
+
+工具链要求见下方上游 Prerequisites。便捷构建脚本使用 PowerShell 7、
+VS 2026 ≥ 18.6 C++ 工具链及对应 Windows SDK。在仓库根目录运行：
+
+```powershell
+# Debug/x64：增量构建、准备完整运行布局并启动
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-TerminalEL.ps1 -Run
+
+# Release/x64：只构建并准备运行布局
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-TerminalEL.ps1 -Configuration Release
+```
+
+先关闭对应输出目录的本地实例，再从另一个终端构建。脚本不终止进程，
+会准备 WinUI DLL、合并 PRI 并放置 OpenConsole。输出目录为
+`bin\x64\<Debug或Release>\WindowsTerminal`，日志在 `obj\terminalEL-build-logs`。
+构建后可在全局或 Profile 的“外观”页调整效果。
+
+只读检查（不编译、不启动程序）：
+
+```powershell
+python tools/Test-TerminalELFoundation.py
+python tools/Test-TerminalELUI.py
+python tools/Test-TerminalELProjectGraph.py
+git diff --check
+```
+
+这些检查不代替 C++/WinRT、XAML、HLSL 编译或实际 GPU 与界面验收。
+
+## 文档与致谢
+
+- [Foundation v1 参数与兼容约定](doc/terminalEL-foundation-v1.md)
+- [开发状态与实现边界](doc/terminalEL-status.md)
+- [许可证](LICENSE) · [第三方声明](NOTICE.md)
+
+感谢 Windows Terminal 及其依赖项目的贡献者。本 fork 的实现、文档和开发脚本
+包含经维护者授权的 **AI 辅助开发工作**，保留上游许可证和第三方声明。
+
+## 上游 Windows Terminal 文档
+
+以下保留上游说明。Microsoft Store、winget 及上游 Releases 提供的是原版 Windows
+Terminal，不包含本 fork 的 EL 显示功能。页首构建徽章指向上游流水线，不代表本 fork
+已通过相同验证。
+
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 <details>
